@@ -3,10 +3,8 @@
 <script src="{{ asset('backend/assets/vendor/quill/quill.min.js') }}"></script>
 <script src="{{asset ('backend/assets/js/pages/quilljs.init.js') }}"></script>
 
-    <!-- Include the jQuery Toast Plugin from a CDN -->
-<script src="{{asset('backend/assets/js/vendor.min.js') }}"></script>
-<script src="{{asset('backend/assets/js/app.min.js') }}"></script>
-
+{{-- vendor.min.js / app.min.js are loaded once above: loading app.min.js twice binds the
+     sidebar toggle twice, so each click opens and immediately closes the menu --}}
 <script src="{{asset('backend/assets/js/pages/form-wizard.init.js') }}"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

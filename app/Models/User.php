@@ -56,15 +56,12 @@ class User extends Authenticatable
     }
 
     /**
-     * Displays the single role of user from many-many relationship
-     * @return mixed
+     * Displays the single role of user from many-many relationship.
+     * Reads the loaded `roles` relation, so repeated calls in a request cost one query.
      */
-    public function mainRole()
+    public function mainRole(): ?Role
     {
-        return self::join('role_user', 'users.id', '=', 'role_user.user_id')
-            ->join('roles', 'role_user.role_id', '=', 'roles.id')
-            ->select('roles.*')
-            ->where('users.id', $this->id)->first();
+        return $this->roles->first();
     }
 
     public function isAdmin()

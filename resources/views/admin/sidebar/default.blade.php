@@ -48,16 +48,6 @@
                     </form>
                 </div>
             </li>
-
-            <li>
-                <form method="POST" action="{{ route('logout') }}" class="m-0">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span class="d-none d-sm-inline">{{ __('Logout') }}</span>
-                    </button>
-                </form>
-            </li>
         </ul>
     </div>
 </div>
@@ -65,7 +55,7 @@
 <div class="leftside-menu">
 
     <!-- Brand Logo -->
-    <a href="{{ url('dashboard') }}" class="logo logo-dark" style="height: auto; padding: 16px 0;">
+    <a href="{{ url('dashboard') }}" class="logo logo-dark d-block text-center" style="height: auto; padding: 16px 0;">
         <span class="logo-lg">
             <img src="{{ $logo }}" alt="Nepal Notary Public Council" style="height: 90px; width: auto;">
         </span>
@@ -85,18 +75,6 @@
                     <i class="bi bi-speedometer2"></i>
                     <span> {{ __('Dashboard') }} </span>
                 </a>
-            </li>
-
-            <li class="side-nav-title">{{ __('Account') }}</li>
-
-            <li class="side-nav-item">
-                <form method="POST" action="{{ route('logout') }}" class="m-0">
-                    @csrf
-                    <button type="submit" class="side-nav-link w-100 border-0 bg-transparent text-start">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span> {{ __('Logout') }} </span>
-                    </button>
-                </form>
             </li>
         </ul>
 
