@@ -1,0 +1,7 @@
+# Uploaded files must never be executed as scripts.
+<FilesMatch "\.(?i:php\d*|phtml|phar|pht|phps|shtml|cgi|pl|py|sh)$">
+    Require all denied
+</FilesMatch>
+RemoveHandler .php .phtml .phar .pht .phps
+RemoveType .php .phtml .phar .pht .phps
+Options -ExecCGI -Indexes
