@@ -154,4 +154,59 @@
     padding: 0 0.5rem;
   }
 }
+
+.npc__auth-alert--success {
+  border-color: rgba(25, 135, 84, 0.3);
+  background: rgba(25, 135, 84, 0.08);
+  color: #146c43;
+}
+
+.npc__auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.npc__auth-link,
+.npc__auth-link-button {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.npc__auth-link:hover,
+.npc__auth-link-button:hover {
+  text-decoration: underline;
+}
+
+.npc__auth-link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.npc__auth-switch {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.npc__auth-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #6c757d;
+}
+
+.npc__auth-otp {
+  letter-spacing: 0.5em;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
 </style>

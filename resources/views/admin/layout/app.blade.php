@@ -7,10 +7,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        {{ getSiteSetting('site_title') != null ? getSiteSetting('site_title') : 'Notary Public Council' }}
+        {{ __('Nepal Notary Public Council') }}
         {{ isset($pageData->title) ? '| ' . $pageData->title : '' }}
     </title>
-    <link rel="shortcut icon" href="{{ getSiteSetting('logo_image') }}">
+    <link rel="shortcut icon" href="{{ asset('frontend/images/logo.png') }}">
     @include('admin.layout.style')
     @stack('styles')
 </head>

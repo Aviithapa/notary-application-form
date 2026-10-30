@@ -2,7 +2,6 @@
 
 namespace App\Services\User;
 
-use App\Mail\RegistrarUser;
 use App\Models\Role;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +24,6 @@ class UserCreator
 
         $user = $this->userRepository->create($data);
         $user->roles()->attach($role);
-        // Mail::to($user->email)->send(new RegistrarUser($user));
         return $user;
     }
 }

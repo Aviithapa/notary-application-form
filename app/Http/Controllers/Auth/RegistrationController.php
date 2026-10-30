@@ -3,100 +3,107 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Enums\RoleEnum;
+use App\Enums\UserStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\UserCreateRequest;
-use App\Mail\RegistrarUser;
-use App\Models\Applicant;
 use App\Models\Role;
 use App\Models\User;
-use App\Repositories\User\UserRepository;
-use Exception;
+use App\Support\EmailOtp;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class RegistrationController extends Controller
 {
-    //
-    protected $userRepository;
-
-    public function __construct(UserRepository $userRepository)
+    public function __construct(protected EmailOtp $otp)
     {
-        $this->userRepository = $userRepository;
     }
-
 
     public function index()
     {
         return view('auth.register');
     }
 
-    public function verifyOtpIndex($email)
+    public function store(Request $request)
     {
-        $user = $this->userRepository->all()->where('email', $email)->first();
-        if (!$user)
-            return redirect()->back()->withErrors([
-                'active' => 'No user found'
+        $data = $request->validate([
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+        ]);
+
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'status' => UserStatusEnum::INACTIVE->value,
             ]);
-        Mail::to($user->email)->send(new RegistrarUser($user, $user['token']));
-        return view('auth.register-otp-verify', compact('email'));
-    }
-    public function store(UserCreateRequest $request)
-    {
-        $data = $request->all();
-        try {
-            $data['token'] = str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-            $role = Role::where('name', RoleEnum::APPLICANT)->first();
-            $data['position'] = RoleEnum::APPLICANT;
-            $data['reference'] = $data['password'];
-            $data['password'] = bcrypt($data['password']);
-            $data['phone_number'] = $data['token'];
-            $user = $this->userRepository->store($data);
-            if ($user == false) {
-                session()->flash('danger', 'Oops! Something went wrong.');
-                return redirect()->back()->withInput();
-            }
-            $user->roles()->attach($role);
-            Mail::to($user->email)->send(new RegistrarUser($user, $data['token']));
-            return redirect()->route('register.verify.otp', ['email' => $data['email']]);
-        } catch (Exception $e) {
-            session()->flash('danger', 'Oops! Something went wrong.');
-            return redirect()->back()->withInput();
-        }
+            $user->roles()->attach(Role::where('name', RoleEnum::APPLICANT)->firstOrFail());
+
+            return $user;
+        });
+
+        $this->otp->send($user->email, EmailOtp::PURPOSE_REGISTER);
+        $request->session()->put('register_email', $user->email);
+
+        return redirect()->route('register.verify')
+            ->with('success', __('We have sent a verification code to your email.'));
     }
 
+    public function verifyOtpIndex(Request $request)
+    {
+        $email = $request->session()->get('register_email');
+        if (! $email) {
+            return redirect()->route('register');
+        }
+
+        return view('auth.verify-otp', [
+            'email' => $email,
+            'action' => route('register.verify.submit'),
+            'resendAction' => route('register.resend'),
+            'title' => __('Verify your email'),
+        ]);
+    }
 
     public function verifyOtp(Request $request)
     {
-        $request->validate([
-            'otp' => 'required',
-            'email' => 'required|email',
-        ]);
+        $request->validate(['otp' => ['required', 'digits:6']]);
 
-
-        $otp = $request->input('otp');
-        $email = $request->input('email');
-
-        $user = User::where('email', $email)
-            ->where('token', $otp)
-            ->first();
-
-        if (!$user) {
-            session()->flash('danger', 'Invalid otp not found.');
-            return redirect()->back()->withInput();
+        $email = $request->session()->get('register_email');
+        $user = $email ? User::where('email', $email)->first() : null;
+        if (! $user) {
+            return redirect()->route('register');
         }
-        $user->status = 1;
-        $user->save();
-        return redirect()->route('login');
+
+        if (! $this->otp->verify($email, EmailOtp::PURPOSE_REGISTER, $request->input('otp'))) {
+            return back()->withErrors(['otp' => __('The code is invalid or has expired.')]);
+        }
+
+        $user->forceFill([
+            'status' => UserStatusEnum::ACTIVE->value,
+            'email_verified_at' => now(),
+        ])->save();
+
+        $request->session()->forget('register_email');
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard');
     }
 
-    public function resendOtp($email)
+    public function resendOtp(Request $request)
     {
-        $user = User::where('email', $email)
-            ->first();
-        $token = str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        $user->token = $token;
-        $user->save();
-        // Mail::to($user->email)->send(new RegistrarUser($user, $token));
-        return redirect()->route('register.verify.otp', ['email' => $email])->with('token', 'Token has been sent to the email');
+        $email = $request->session()->get('register_email');
+        if (! $email || ! User::where('email', $email)->exists()) {
+            return redirect()->route('register');
+        }
+
+        if (! $this->otp->canResend($email, EmailOtp::PURPOSE_REGISTER)) {
+            return back()->withErrors(['otp' => __('Please wait a minute before requesting a new code.')]);
+        }
+
+        $this->otp->send($email, EmailOtp::PURPOSE_REGISTER);
+
+        return back()->with('success', __('A new code has been sent to your email.'));
     }
 }

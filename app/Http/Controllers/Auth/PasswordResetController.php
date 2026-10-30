@@ -4,111 +4,123 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\EmailOtp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class PasswordResetController extends Controller
 {
 
-    public function index()
+    public function __construct(protected EmailOtp $otp)
     {
-        return view('auth.forget-password');
     }
 
-    public function verifyOtpIndex()
+    public function index()
     {
-        return view('auth.verify-otp');
+        return view('auth.forgot-password');
     }
 
     public function sendOtp(Request $request)
     {
-        $email = $request->input('email');
-        $otp = Str::random(6); // Generate a 6-digit OTP
+        $email = $request->validate(['email' => ['required', 'email']])['email'];
 
-        $user = User::where('email', $email)->first();
-
-        if (!$user) {
-            return redirect()->back()->withErrors(['email' => 'No User Found']);
+        // same response whether or not the account exists, so emails can't be probed
+        if (User::where('email', $email)->exists() && $this->otp->canResend($email, EmailOtp::PURPOSE_RESET)) {
+            $this->otp->send($email, EmailOtp::PURPOSE_RESET);
         }
 
-        $password_reset_token = DB::table('password_reset_tokens')->where('email', $email)->first();
-        if ($password_reset_token)
-            DB::table('password_reset_tokens')->where('email', $email)->delete();
+        $request->session()->forget('reset_verified_email');
+        $request->session()->put('reset_email', $email);
 
-
-        // Store the OTP and its expiration time in the password_resets table
-        DB::table('password_reset_tokens')->insert([
-            'email' => $email,
-            'token' => Hash::make($otp),
-            'created_at' => now(),
-        ]);
-
-        // try {
-        //     Mail::to($email)->send(new ResetPasswordOtp($user, $otp));
-        // } catch (Expectation $e) {
-        //     return redirect()->back()->withErrors(['email' => 'Email Server is down please try in a while.']);
-        // }
-        return view('auth.verify-otp', compact('email'));
+        return redirect()->route('password.verify')
+            ->with('success', __('If an account exists for that email, we have sent a reset code to it.'));
     }
 
+    public function verifyOtpIndex(Request $request)
+    {
+        $email = $request->session()->get('reset_email');
+        if (! $email) {
+            return redirect()->route('password.request');
+        }
+
+        return view('auth.verify-otp', [
+            'email' => $email,
+            'action' => route('password.verify.submit'),
+            'resendAction' => route('password.resend'),
+            'title' => __('Enter reset code'),
+        ]);
+    }
 
     public function verifyOtp(Request $request)
     {
-        $request->validate([
-            'otp' => 'required',
-            'email' => 'required|email',
-        ]);
+        $request->validate(['otp' => ['required', 'digits:6']]);
 
-        $otp = $request->input('otp');
-        $email = $request->input('email');
-
-        $passwordReset = DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if (!$passwordReset) {
-            return redirect()->route('password.reset.verify')->with(['otp_error' => 'Invalid OTP.', 'email' => $email]);
+        $email = $request->session()->get('reset_email');
+        if (! $email) {
+            return redirect()->route('password.request');
         }
 
-        if (!Hash::check($otp, $passwordReset->token)) {
-            return redirect()->route('password.reset.verify')->with(['otp_error' => 'Invalid OTP.', 'email' => $email]);
+        if (! $this->otp->verify($email, EmailOtp::PURPOSE_RESET, $request->input('otp'))) {
+            return back()->withErrors(['otp' => __('The code is invalid or has expired.')]);
         }
 
-        // Check if the OTP has expired (5-minute validity)
-        $expirationTime = now()->subMinutes(5);
-        if ($passwordReset->created_at < $expirationTime) {
-            return redirect()->back()->withErrors(['otp' => 'OTP has expired.']);
+        $request->session()->forget('reset_email');
+        $request->session()->put('reset_verified_email', $email);
+
+        return redirect()->route('password.reset');
+    }
+
+    public function resendOtp(Request $request)
+    {
+        $email = $request->session()->get('reset_email');
+        if (! $email) {
+            return redirect()->route('password.request');
         }
 
-        // OTP is valid; allow the user to reset the password
-        return redirect()->route('password.reset', ['email' => $email]);
+        if (! $this->otp->canResend($email, EmailOtp::PURPOSE_RESET)) {
+            return back()->withErrors(['otp' => __('Please wait a minute before requesting a new code.')]);
+        }
+
+        if (User::where('email', $email)->exists()) {
+            $this->otp->send($email, EmailOtp::PURPOSE_RESET);
+        }
+
+        return back()->with('success', __('A new code has been sent to your email.'));
+    }
+
+    public function showResetForm(Request $request)
+    {
+        if (! $request->session()->has('reset_verified_email')) {
+            return redirect()->route('password.request');
+        }
+
+        return view('auth.reset-password');
     }
 
     public function resetPassword(Request $request)
     {
+        $email = $request->session()->get('reset_verified_email');
+        $user = $email ? User::where('email', $email)->first() : null;
+        if (! $user) {
+            return redirect()->route('password.request');
+        }
+
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|confirmed|min:8',
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
-        $email = $request->input('email');
-        $password = Hash::make($request->input('password'));
-        $reference = $request->input('password');
+        $user->forceFill([
+            'password' => Hash::make($request->input('password')),
+            'remember_token' => Str::random(60),
+        ])->save();
 
-        // Update the user's password in the users table
-        DB::table('users')
-            ->where('email', $email)
-            ->update(['password' => $password, 'reference' => $reference]);
+        $request->session()->forget('reset_verified_email');
 
-        // Delete the OTP record from the password_resets table
-        DB::table('password_resets')->where('email', $email)->delete();
-
-        // Redirect the user to the login page with a success message
-        return redirect()->route('login')->with('success', 'Password reset successfully. You can now log in with your new password.');
+        return redirect()->route('login')
+            ->with('success', __('Password reset successfully. You can now log in with your new password.'));
     }
 
     public function showChangePassword()

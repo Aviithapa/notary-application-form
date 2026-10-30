@@ -1926,12 +1926,17 @@ button {
   transition: color 0.2s ease;
 }
 
-.npc__auth-input input {
+/* [type] beats the generic input[type="text"] rule below, which would otherwise
+   reset the padding (text under the icon) when the password is shown or for OTP fields */
+.npc__auth-input input,
+.npc__auth-input input[type] {
   width: 100%;
+  margin: 0;
   padding: 0.8rem 2.75rem;
   border: 1px solid #dee2e6;
   border-radius: 10px;
   background-color: #f8f9fc;
+  color: inherit;
   font-family: inherit;
   font-size: 0.95rem;
   outline: none;

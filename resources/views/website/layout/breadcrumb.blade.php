@@ -33,7 +33,7 @@
                     @hasSection('page_subtitle')
                         @yield('page_subtitle')
                     @else
-                        {{ getSiteSetting('site_title') ?: __('Notary Public Council') }}
+                        {{ __('Notary Public Council') }}
                     @endif
                 </p>
             </div>
