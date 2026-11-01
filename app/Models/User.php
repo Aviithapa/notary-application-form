@@ -83,6 +83,31 @@ class User extends Authenticatable
         }
     }
 
+    public function applicantProfile()
+    {
+        return $this->hasOne(ApplicantProfile::class);
+    }
+
+    public function qualifications()
+    {
+        return $this->hasMany(ApplicantQualification::class);
+    }
+
+    public function trainings()
+    {
+        return $this->hasMany(ApplicantTraining::class);
+    }
+
+    /** Which applicant form steps already have saved data. */
+    public function applicationProgress(): array
+    {
+        return [
+            'personal' => $this->applicantProfile()->exists(),
+            'qualifications' => $this->qualifications()->exists(),
+            'trainings' => $this->trainings()->exists(),
+        ];
+    }
+
     public function taskAssignments()
     {
         return $this->hasMany(TaskAssignment::class, 'assigned_to');

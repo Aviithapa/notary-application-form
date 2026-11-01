@@ -14,4 +14,5 @@
 
 require 'web/auth.php';
 require 'web/backend.php';
+require 'web/applicant.php';
 require 'web/frontend.php';

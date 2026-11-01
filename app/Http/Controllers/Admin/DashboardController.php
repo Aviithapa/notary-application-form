@@ -16,7 +16,10 @@ class DashboardController extends Controller
 
         return match ($user->mainRole()?->name) {
             RoleEnum::ADMIN, RoleEnum::SUPER_ADMIN => view('admin.dashboard.admin'),
-            RoleEnum::APPLICANT => view('admin.dashboard.applicant', ['user' => $user]),
+            RoleEnum::APPLICANT => view('admin.dashboard.applicant', [
+                'user' => $user,
+                'progress' => $user->applicationProgress(),
+            ]),
             default => view('admin.dashboard.default'),
         };
     }

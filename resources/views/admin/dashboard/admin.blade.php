@@ -4,14 +4,7 @@
     @php
         $hour = now()->hour;
         $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
-        $quickActions = [
-            ['label' => 'Add News', 'icon' => 'bi-plus-circle', 'url' => url('cms/news/create')],
-            ['label' => 'Upload Legal Docs', 'icon' => 'bi-cloud-upload', 'url' => url('cms/legal-documents')],
-            ['label' => 'Board Members', 'icon' => 'bi-people', 'url' => url('cms/bod')],
-            ['label' => 'Staff', 'icon' => 'bi-person-badge', 'url' => url('cms/staff')],
-            ['label' => 'Banners', 'icon' => 'bi-images', 'url' => url('cms/banner')],
-            ['label' => 'Site Settings', 'icon' => 'bi-gear', 'url' => route('dashboard.site-settings.index')],
-        ];
+
     @endphp
 
     <!-- start page title -->
@@ -20,7 +13,7 @@
             <div class="page-title-box">
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="javascript: void(0);">{{ getSiteSetting('site_title') }}</a></li>
+                        <li class="breadcrumb-item"><a href="javascript: void(0);"> </a></li>
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
                 </div>
@@ -29,180 +22,6 @@
         </div>
     </div>
     <!-- end page title -->
-
-    <!-- welcome banner -->
-    <div class="dash-welcome mb-4">
-        <div class="dash-welcome-text">
-            <span class="dash-welcome-date"><i class="bi-calendar3"></i> {{ now()->format('l, d F Y') }}</span>
-            <h2>{{ $greeting }}, {{ Auth::user()->name ?? 'Admin' }} 👋</h2>
-            <p>Here's what's happening on the {{ getSiteSetting('site_title') ?: 'Notary Public Council' }} website today.</p>
-        </div>
-        <div class="dash-welcome-actions">
-            <a href="{{ url('/') }}" target="_blank" class="btn btn-light">
-                <i class="bi-box-arrow-up-right"></i> View Website
-            </a>
-            <a href="{{ url('cms/news/create') }}" class="btn dash-btn-accent">
-                <i class="bi-plus-lg"></i> New Post
-            </a>
-        </div>
-    </div>
-
-    <!-- stats -->
-    <div class="row g-3 mb-4">
-        @foreach ($stats as $stat)
-            <div class="col-xl-2 col-md-4 col-6">
-                <a @if ($stat['url']) href="{{ $stat['url'] }}" @endif class="dash-stat dash-tone-{{ $stat['tone'] }}">
-                    <span class="dash-stat-icon"><i class="{{ $stat['icon'] }}"></i></span>
-                    <span class="dash-stat-value">{{ number_format($stat['value']) }}</span>
-                    <span class="dash-stat-label">{{ $stat['label'] }}</span>
-                </a>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="row g-3">
-        <!-- latest news -->
-        <div class="col-xl-8">
-            <div class="card dash-card h-100">
-                <div class="dash-card-header">
-                    <h5><i class="bi-newspaper"></i> Latest News & Notices</h5>
-                    <a href="{{ url('cms/news') }}" class="dash-link">View all <i class="bi-arrow-right"></i></a>
-                </div>
-                <div class="card-body p-0">
-                    @forelse ($latestNews as $item)
-                        <div class="dash-news-item">
-                            <div class="dash-news-date">
-                                <strong>{{ $item->created_at?->format('d') }}</strong>
-                                <span>{{ $item->created_at?->format('M') }}</span>
-                            </div>
-                            <div class="dash-news-body">
-                                <h6>{{ $item->title }}</h6>
-                                <div class="dash-news-meta">
-                                    <span class="badge {{ $item->status === 'approved' ? 'bg-success' : 'bg-warning text-dark' }}">
-                                        {{ ucfirst($item->status ?? 'pending') }}
-                                    </span>
-                                    @if ($item->is_popup)
-                                        <span class="badge bg-info"><i class="bi-window"></i> Popup</span>
-                                    @endif
-                                    <span class="text-muted">{{ $item->created_at?->diffForHumans() }}</span>
-                                </div>
-                            </div>
-                            <div class="dash-news-actions">
-                                <a href="{{ url('news-details/' . $item->id) }}" target="_blank" class="btn btn-sm btn-light" title="View on site">
-                                    <i class="bi-eye"></i>
-                                </a>
-                                <a href="{{ url('cms/news/' . $item->id . '/edit') }}" class="btn btn-sm btn-light" title="Edit">
-                                    <i class="bi-pencil"></i>
-                                </a>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="dash-empty">
-                            <i class="bi-newspaper"></i>
-                            <p>No news yet.</p>
-                            <a href="{{ url('cms/news/create') }}" class="btn btn-sm btn-primary">Add the first one</a>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        <!-- quick actions -->
-        <div class="col-xl-4">
-            <div class="card dash-card h-100">
-                <div class="dash-card-header">
-                    <h5><i class="bi-lightning-charge"></i> Quick Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="dash-actions">
-                        @foreach ($quickActions as $action)
-                            <a href="{{ $action['url'] }}" class="dash-action">
-                                <i class="{{ $action['icon'] }}"></i>
-                                <span>{{ $action['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- latest messages -->
-        <div class="col-xl-8">
-            <div class="card dash-card h-100">
-                <div class="dash-card-header">
-                    <h5><i class="bi-envelope"></i> Recent Contact Messages</h5>
-                    @if ($inquiryCount)
-                        <a href="{{ route('inquiry.index') }}" class="dash-link">{{ $inquiryCount }} inquiries <i class="bi-arrow-right"></i></a>
-                    @endif
-                </div>
-                <div class="card-body p-0">
-                    @forelse ($latestMessages as $message)
-                        <div class="dash-message">
-                            <span class="dash-message-avatar">{{ mb_strtoupper(mb_substr($message->name, 0, 1)) }}</span>
-                            <div class="dash-message-body">
-                                <div class="dash-message-head">
-                                    <strong>{{ $message->name }}</strong>
-                                    <span class="text-muted">{{ $message->created_at?->diffForHumans() }}</span>
-                                </div>
-                                <p>{{ \Illuminate\Support\Str::limit($message->message, 140) }}</p>
-                                <div class="dash-message-contact">
-                                    <a href="mailto:{{ $message->email }}"><i class="bi-envelope"></i> {{ $message->email }}</a>
-                                    @if ($message->phone)
-                                        <a href="tel:{{ $message->phone }}"><i class="bi-telephone"></i> {{ $message->phone }}</a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="dash-empty">
-                            <i class="bi-inbox"></i>
-                            <p>No messages from the contact form yet.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        <!-- leadership + directory -->
-        <div class="col-xl-4">
-            <div class="card dash-card mb-3">
-                <div class="dash-card-header">
-                    <h5><i class="bi-award"></i> Leadership</h5>
-                    <a href="{{ url('cms/bod') }}" class="dash-link">Manage <i class="bi-arrow-right"></i></a>
-                </div>
-                <div class="card-body">
-                    @foreach (['Chairman' => $chairman, 'Registrar' => $registrar] as $role => $person)
-                        <div class="dash-person">
-                            <span class="dash-person-photo">
-                                <img src="{{ $person?->getFirstMediaUrl('bod') ?: asset('frontend/images/avatar-placeholder.svg') }}" alt="{{ $person->title ?? '' }}">
-                            </span>
-                            <div>
-                                <strong>{{ $person->title ?? 'Not assigned' }}</strong>
-                                <span>{{ $person?->content ?: $role }}</span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="card dash-card">
-                <div class="dash-card-header">
-                    <h5><i class="bi-journal-text"></i> Notary Namespace</h5>
-                    <span class="badge bg-light text-muted">Sample data</span>
-                </div>
-                <div class="card-body">
-                    <div class="dash-directory">
-                        @foreach ($directory as $item)
-                            <a href="{{ $item['url'] }}" target="_blank" class="dash-directory-item">
-                                <strong>{{ number_format($item['value']) }}</strong>
-                                <span>{{ $item['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('styles')
@@ -320,12 +139,35 @@
             color: #6c757d;
         }
 
-        .dash-tone-primary { --dash-tone: #003893; --dash-tone-bg: rgba(0, 56, 147, 0.1); }
-        .dash-tone-danger { --dash-tone: #dc143c; --dash-tone-bg: rgba(220, 20, 60, 0.1); }
-        .dash-tone-info { --dash-tone: #0e7490; --dash-tone-bg: rgba(14, 116, 144, 0.1); }
-        .dash-tone-success { --dash-tone: #15803d; --dash-tone-bg: rgba(21, 128, 61, 0.1); }
-        .dash-tone-warning { --dash-tone: #b45309; --dash-tone-bg: rgba(180, 83, 9, 0.1); }
-        .dash-tone-secondary { --dash-tone: #6d28d9; --dash-tone-bg: rgba(109, 40, 217, 0.1); }
+        .dash-tone-primary {
+            --dash-tone: #003893;
+            --dash-tone-bg: rgba(0, 56, 147, 0.1);
+        }
+
+        .dash-tone-danger {
+            --dash-tone: #dc143c;
+            --dash-tone-bg: rgba(220, 20, 60, 0.1);
+        }
+
+        .dash-tone-info {
+            --dash-tone: #0e7490;
+            --dash-tone-bg: rgba(14, 116, 144, 0.1);
+        }
+
+        .dash-tone-success {
+            --dash-tone: #15803d;
+            --dash-tone-bg: rgba(21, 128, 61, 0.1);
+        }
+
+        .dash-tone-warning {
+            --dash-tone: #b45309;
+            --dash-tone-bg: rgba(180, 83, 9, 0.1);
+        }
+
+        .dash-tone-secondary {
+            --dash-tone: #6d28d9;
+            --dash-tone-bg: rgba(109, 40, 217, 0.1);
+        }
 
         .dash-card {
             border: 1px solid #e9edf4;
@@ -515,7 +357,7 @@
             gap: 0.85rem;
         }
 
-        .dash-person + .dash-person {
+        .dash-person+.dash-person {
             margin-top: 0.9rem;
         }
 

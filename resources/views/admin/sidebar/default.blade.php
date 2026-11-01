@@ -76,6 +76,29 @@
                     <span> {{ __('Dashboard') }} </span>
                 </a>
             </li>
+
+            @if (Auth::user()->mainRole()?->name === \App\Enums\RoleEnum::APPLICANT)
+                <li class="side-nav-title">{{ __('Application') }}</li>
+
+                <li class="side-nav-item {{ request()->routeIs('applicant.personal*') ? 'menuitem-active' : '' }}">
+                    <a href="{{ route('applicant.personal') }}" class="side-nav-link {{ request()->routeIs('applicant.personal*') ? 'active' : '' }}">
+                        <i class="bi bi-person-vcard"></i>
+                        <span> {{ __('Personal details') }} </span>
+                    </a>
+                </li>
+                <li class="side-nav-item {{ request()->routeIs('applicant.qualifications*') ? 'menuitem-active' : '' }}">
+                    <a href="{{ route('applicant.qualifications') }}" class="side-nav-link {{ request()->routeIs('applicant.qualifications*') ? 'active' : '' }}">
+                        <i class="bi bi-mortarboard"></i>
+                        <span> {{ __('Qualifications') }} </span>
+                    </a>
+                </li>
+                <li class="side-nav-item {{ request()->routeIs('applicant.trainings*') ? 'menuitem-active' : '' }}">
+                    <a href="{{ route('applicant.trainings') }}" class="side-nav-link {{ request()->routeIs('applicant.trainings*') ? 'active' : '' }}">
+                        <i class="bi bi-award"></i>
+                        <span> {{ __('Trainings') }} </span>
+                    </a>
+                </li>
+            @endif
         </ul>
 
         <div class="clearfix"></div>
