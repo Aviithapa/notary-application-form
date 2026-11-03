@@ -151,7 +151,11 @@
                     @include('admin.pages.applications.partials.profile', ['user' => $user])
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <a href="{{ route('applicant.personal') }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i> {{ __('Edit details') }}</a>
+                    @if ($user->profileLocked())
+                        <span class="text-muted small"><i class="bi bi-lock-fill me-1"></i>{{ __('Your details are locked.') }}</span>
+                    @else
+                        <a href="{{ route('applicant.personal') }}" class="btn btn-light"><i class="bi bi-pencil me-1"></i> {{ __('Edit details') }}</a>
+                    @endif
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="background-color: #003893; border-color: #003893;">{{ __('Close') }}</button>
                 </div>
             </div>

@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Route;
 // Applicant application form (three steps)
 Route::middleware(['auth', 'role:applicant'])->prefix('dashboard/application')->name('applicant.')->group(function () {
     Route::get('personal', [ApplicationController::class, 'personal'])->name('personal');
-    Route::post('personal', [ApplicationController::class, 'savePersonal'])->name('personal.save');
+    Route::post('personal', [ApplicationController::class, 'savePersonal'])->middleware('profile.editable')->name('personal.save');
     Route::get('qualifications', [ApplicationController::class, 'qualifications'])->name('qualifications');
-    Route::post('qualifications', [ApplicationController::class, 'saveQualifications'])->name('qualifications.save');
+    Route::post('qualifications', [ApplicationController::class, 'saveQualifications'])->middleware('profile.editable')->name('qualifications.save');
     Route::get('trainings', [ApplicationController::class, 'trainings'])->name('trainings');
-    Route::post('trainings', [ApplicationController::class, 'saveTrainings'])->name('trainings.save');
+    Route::post('trainings', [ApplicationController::class, 'saveTrainings'])->middleware('profile.editable')->name('trainings.save');
 
     // Applying for exams (application calls)
     Route::get('exams', [ExamApplicationController::class, 'index'])->name('exams');

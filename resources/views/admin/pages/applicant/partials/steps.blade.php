@@ -37,6 +37,16 @@
     </div>
 </div>
 
+@if ($locked ?? false)
+    <div class="alert alert-info d-flex gap-2 align-items-start">
+        <i class="bi bi-lock-fill mt-1"></i>
+        <div>
+            <strong>{{ __('Your details are locked.') }}</strong>
+            {{ __('An application has been approved, so these details can no longer be changed. Contact the council if something needs correcting.') }}
+        </div>
+    </div>
+@endif
+
 @if ($errors->any())
     <div class="alert alert-danger">
         <i class="bi bi-exclamation-triangle me-1"></i>
@@ -60,6 +70,8 @@
             .applicant-row { counter-increment: applicant-row; }
             .applicant-row-number::after { content: counter(applicant-row); }
             .applicant-thumb { height: 64px; width: auto; max-width: 120px; object-fit: cover; }
+            .applicant-fieldset { min-width: 0; }
+            .applicant-fieldset:disabled [data-add-row], .applicant-fieldset:disabled [data-remove-row] { display: none; }
             .applicant-actions { position: sticky; bottom: 0; z-index: 5; background: var(--ct-body-bg, #f5f7fb); padding: .75rem 0; }
         </style>
     @endpush

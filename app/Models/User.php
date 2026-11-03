@@ -116,6 +116,17 @@ class User extends Authenticatable
         ]);
     }
 
+    /**
+     * The applicant form (personal details, qualifications, trainings) is locked once any exam
+     * application has moved past pending/rejected, so the reviewed details cannot change.
+     */
+    public function profileLocked(): bool
+    {
+        return $this->examApplications()
+            ->whereNotIn('status', ExamApplication::PROFILE_EDITABLE_STATUSES)
+            ->exists();
+    }
+
     /** Which applicant form steps already have saved data. */
     public function applicationProgress(): array
     {

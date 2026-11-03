@@ -60,6 +60,9 @@ class ExamApplication extends Model implements HasMedia
         self::REJECTED => [self::PENDING],
     ];
 
+    /** While every application is in one of these, the applicant may still edit their form. */
+    public const PROFILE_EDITABLE_STATUSES = [self::PENDING, self::REJECTED];
+
     /** Statuses in which the admit card exists and can be printed. */
     public const ADMIT_CARD_STATUSES = [self::ADMIT_CARD_GENERATED, self::PASSED, self::FAILED];
 

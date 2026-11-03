@@ -75,6 +75,7 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\CheckAdmin::class,
         'super_admin' => CheckSuperAdmin::class,
         'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+        'profile.editable' => \App\Http\Middleware\EnsureProfileEditable::class,
 
     ];
 }

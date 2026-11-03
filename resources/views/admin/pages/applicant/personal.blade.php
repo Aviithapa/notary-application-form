@@ -10,6 +10,8 @@
 
     <form action="{{ route('applicant.personal.save') }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
+        {{-- Read-only once an application has been approved; the server refuses saves too --}}
+        <fieldset @disabled($locked) class="applicant-fieldset">
 
         {{-- Basic information --}}
         <div class="card">
@@ -179,10 +181,18 @@
             </div>
         </div>
 
+        </fieldset>
+
         <div class="applicant-actions d-flex justify-content-end gap-2">
-            <button type="submit" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
-                {{ __('Save and continue') }} <i class="bi bi-arrow-right ms-1"></i>
-            </button>
+            @if ($locked)
+                <a href="{{ route('applicant.qualifications') }}" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
+                    {{ __('Next') }} <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            @else
+                <button type="submit" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
+                    {{ __('Save and continue') }} <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            @endif
         </div>
     </form>
 @endsection

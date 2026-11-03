@@ -5,6 +5,8 @@
 
     <form action="{{ route('applicant.qualifications.save') }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
+        {{-- Read-only once an application has been approved; the server refuses saves too --}}
+        <fieldset @disabled($locked) class="applicant-fieldset">
 
         <div class="card">
             <div class="card-body">
@@ -38,11 +40,19 @@
             @include('admin.pages.applicant.partials.qualification-row', ['i' => '__INDEX__', 'row' => [], 'model' => null])
         </template>
 
+        </fieldset>
+
         <div class="applicant-actions d-flex justify-content-between gap-2">
             <a href="{{ route('applicant.personal') }}" class="btn btn-light"><i class="bi bi-arrow-left me-1"></i> {{ __('Back') }}</a>
-            <button type="submit" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
-                {{ __('Save and continue') }} <i class="bi bi-arrow-right ms-1"></i>
-            </button>
+            @if ($locked)
+                <a href="{{ route('applicant.trainings') }}" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
+                    {{ __('Next') }} <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            @else
+                <button type="submit" class="btn btn-primary" style="background-color: #003893; border-color: #003893;">
+                    {{ __('Save and continue') }} <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            @endif
         </div>
     </form>
 @endsection

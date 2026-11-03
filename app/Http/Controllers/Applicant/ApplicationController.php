@@ -39,6 +39,7 @@ class ApplicationController extends Controller
         return view('admin.pages.applicant.personal', [
             'step' => 'personal',
             'progress' => $user->applicationProgress(),
+            'locked' => $user->profileLocked(),
             'profile' => $profile,
             'genders' => PersonalDetailsRequest::GENDERS,
             'districts' => District::orderBy('name_en')->get(['id', 'name_en', 'name_np']),
@@ -76,6 +77,7 @@ class ApplicationController extends Controller
         return view('admin.pages.applicant.qualifications', [
             'step' => 'qualifications',
             'progress' => $user->applicationProgress(),
+            'locked' => $user->profileLocked(),
             'rows' => $this->rows('qualifications', $saved, ['university_name', 'passed_year', 'level', 'division', 'percentage']),
             'saved' => $saved->keyBy('id'),
         ]);
@@ -113,6 +115,7 @@ class ApplicationController extends Controller
         return view('admin.pages.applicant.trainings', [
             'step' => 'trainings',
             'progress' => $user->applicationProgress(),
+            'locked' => $user->profileLocked(),
             'rows' => $this->rows('trainings', $saved, ['training_name', 'certificate_number', 'organization', 'issue_date_ad', 'issue_date_bs']),
             'saved' => $saved->keyBy('id'),
         ]);

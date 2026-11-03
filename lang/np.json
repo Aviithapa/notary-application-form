@@ -565,5 +565,8 @@
     "Status changed to :status.": "स्थिति :status मा परिवर्तन भयो।",
     "Time": "समय",
     "required when rejecting; shown to the applicant": "अस्वीकृत गर्दा अनिवार्य; आवेदकले देख्छन्",
-    "selected": "छानिएको"
+    "selected": "छानिएको",
+    "Your details are locked.": "तपाईंको विवरण लक गरिएको छ।",
+    "An application has been approved, so these details can no longer be changed. Contact the council if something needs correcting.": "आवेदन स्वीकृत भइसकेकाले यी विवरण परिवर्तन गर्न मिल्दैन। केही सच्याउनुपर्ने भए परिषद्मा सम्पर्क गर्नुहोस्।",
+    "Your details are locked because an application has been approved. Contact the council to correct them.": "आवेदन स्वीकृत भइसकेकाले तपाईंको विवरण लक गरिएको छ। सच्याउन परिषद्मा सम्पर्क गर्नुहोस्।"
 }
