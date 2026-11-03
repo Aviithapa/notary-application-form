@@ -19,14 +19,11 @@
 
 <body>
     <div class="wrapper">
-        @switch(Auth::user()->mainRole()->name)
-            @case('admin')
-                @include('admin.sidebar.sidebar')
-            @break
-
-            @default
-                @include('admin.sidebar.default')
-        @endswitch
+        @if (in_array(Auth::user()->mainRole()?->name, [\App\Enums\RoleEnum::ADMIN, \App\Enums\RoleEnum::SUPER_ADMIN], true))
+            @include('admin.sidebar.sidebar')
+        @else
+            @include('admin.sidebar.default')
+        @endif
 
         <div class="content-page">
 

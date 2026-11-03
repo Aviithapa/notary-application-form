@@ -27,6 +27,16 @@
     flex: 1;
 }
 
+/* Dashboard language switch */
+.topbar-lang .btn { border: 1px solid #003893; color: #003893; background: #fff; padding: .2rem .65rem; }
+.topbar-lang .btn.active { background: #003893; color: #fff; }
+
+/* The theme draws the breadcrumb divider with the Remix icon font, which is not shipped */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "/";
+    font-family: inherit;
+}
+
 .pagination-dropdown {
     margin: 0 10px; /* Add space between the dropdown and the other elements */
 }

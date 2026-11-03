@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasLocalizedFields;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class ApplicantProfile extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use HasLocalizedFields, InteractsWithMedia;
 
     public const PHOTO = 'photo';
     public const CITIZENSHIP_FRONT = 'citizenship_front';

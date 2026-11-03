@@ -63,6 +63,21 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-body">
+                    <h5 class="card-title mb-2">{{ __('Exams') }}</h5>
+                    @if ($openExams > 0)
+                        <p class="mb-3">{{ trans_choice(':count exam is open for applications.|:count exams are open for applications.', $openExams) }}</p>
+                        <a href="{{ route('applicant.exams') }}" class="btn btn-sm btn-success"><i class="bi bi-calendar-check me-1"></i> {{ __('Apply for exam') }}</a>
+                    @else
+                        <p class="text-muted mb-3">{{ __('No exams are taking applications right now.') }}</p>
+                    @endif
+                    @if ($applicationsCount > 0)
+                        <a href="{{ route('applicant.applications') }}" class="btn btn-sm btn-light">{{ __('My applications') }} ({{ $applicationsCount }})</a>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
                     <h5 class="card-title mb-2">{{ __('Account') }}</h5>
                     <p class="text-muted mb-2">
                         {{ __('You are signed in as') }} <strong class="text-break">{{ $user->email }}</strong>.

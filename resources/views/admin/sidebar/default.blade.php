@@ -1,68 +1,8 @@
-@php $logo = asset('frontend/images/logo.png'); @endphp
-
-<div class="navbar-custom">
-    <div class="topbar container-fluid">
-        <div class="d-flex align-items-center gap-1">
-
-            <!-- Brand logo for small screens, where the sidebar (and its logo) is hidden -->
-            <a href="{{ url('dashboard') }}" class="d-lg-none me-1">
-                <img src="{{ $logo }}" alt="Nepal Notary Public Council" style="height: 40px; width: auto;">
-            </a>
-
-            <!-- Sidebar Menu Toggle Button -->
-            <button class="button-toggle-menu">
-                <i class="bi bi-list fs-22"></i>
-            </button>
-
-            <span class="d-none d-md-inline fw-semibold ms-2" style="color: #003893;">{{ __('Nepal Notary Public Council') }}</span>
-        </div>
-
-        <ul class="topbar-menu d-flex align-items-center gap-3">
-            <li class="dropdown">
-                <a class="nav-link dropdown-toggle arrow-none nav-user px-2" data-bs-toggle="dropdown" href="#"
-                    role="button" aria-haspopup="false" aria-expanded="false">
-                    <span class="account-user-avatar">
-                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white fw-semibold"
-                            style="width: 32px; height: 32px; background-color: #003893;">
-                            {{ strtoupper(substr(Auth::user()->email, 0, 1)) }}
-                        </span>
-                    </span>
-                    <span class="d-lg-block d-none">
-                        <h5 class="my-0 fw-normal">{{ Auth::user()->username ?: Auth::user()->email }}
-                            <i class="bi bi-chevron-down d-none d-sm-inline-block align-middle"></i>
-                        </h5>
-                    </span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated profile-dropdown">
-                    <div class="dropdown-header noti-title">
-                        <h6 class="text-overflow m-0">{{ __('Welcome!') }}</h6>
-                        <small class="text-muted text-overflow d-block">{{ Auth::user()->email }}</small>
-                    </div>
-
-                    <form method="POST" action="{{ route('logout') }}" class="m-0">
-                        @csrf
-                        <button type="submit" class="dropdown-item text-danger">
-                            <i class="bi bi-box-arrow-right fs-18 align-middle me-1"></i>
-                            <span>{{ __('Logout') }}</span>
-                        </button>
-                    </form>
-                </div>
-            </li>
-        </ul>
-    </div>
-</div>
+@include('admin.sidebar.partials.topbar')
 
 <div class="leftside-menu">
 
-    <!-- Brand Logo -->
-    <a href="{{ url('dashboard') }}" class="logo logo-dark d-block text-center" style="height: auto; padding: 16px 0;">
-        <span class="logo-lg">
-            <img src="{{ $logo }}" alt="Nepal Notary Public Council" style="height: 90px; width: auto;">
-        </span>
-        <span class="logo-sm">
-            <img src="{{ $logo }}" alt="Nepal Notary Public Council" style="height: 40px; width: auto;">
-        </span>
-    </a>
+    @include('admin.sidebar.partials.brand')
 
     <!-- Sidebar -left -->
     <div class="h-100" id="leftside-menu-container" data-simplebar>
@@ -96,6 +36,21 @@
                     <a href="{{ route('applicant.trainings') }}" class="side-nav-link {{ request()->routeIs('applicant.trainings*') ? 'active' : '' }}">
                         <i class="bi bi-award"></i>
                         <span> {{ __('Trainings') }} </span>
+                    </a>
+                </li>
+
+                <li class="side-nav-title">{{ __('Exams') }}</li>
+
+                <li class="side-nav-item {{ request()->routeIs('applicant.exams*') ? 'menuitem-active' : '' }}">
+                    <a href="{{ route('applicant.exams') }}" class="side-nav-link {{ request()->routeIs('applicant.exams*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-check"></i>
+                        <span> {{ __('Apply for exam') }} </span>
+                    </a>
+                </li>
+                <li class="side-nav-item {{ request()->routeIs('applicant.applications') ? 'menuitem-active' : '' }}">
+                    <a href="{{ route('applicant.applications') }}" class="side-nav-link {{ request()->routeIs('applicant.applications') ? 'active' : '' }}">
+                        <i class="bi bi-inbox"></i>
+                        <span> {{ __('My applications') }} </span>
                     </a>
                 </li>
             @endif

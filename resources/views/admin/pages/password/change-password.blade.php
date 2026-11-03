@@ -20,7 +20,7 @@
                                 
                                 <div class="col-xl-12 col-lg-12 col-md-4 col-sm-12">
                                         <div class="card">
-                                                <<div class="card-body">
+                                                <div class="card-body">
                                                     @if(session('success'))
                                                         <div class="alert alert-success">{{ session('success') }}</div>
                                                     @endif

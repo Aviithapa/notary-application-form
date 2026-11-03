@@ -75,6 +75,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // Local time used for calendar-day decisions such as application deadlines
+    'business_timezone' => env('BUSINESS_TIMEZONE', 'Asia/Kathmandu'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

@@ -1,191 +1,44 @@
-<div class="navbar-custom">
-    <div class="topbar container-fluid">
-        <div class="d-flex align-items-center gap-1">
+{{-- Admin / super admin sidebar. Only links to routes that exist; add new admin pages here. --}}
+@php
+    $menu = [
+        __('Main') => [
+            ['label' => __('Dashboard'), 'icon' => 'bi-speedometer2', 'url' => route('dashboard'), 'active' => request()->routeIs('dashboard')],
+        ],
+        __('Service Management') => [
+            ['label' => __('Services'), 'icon' => 'bi-grid-3x2-gap', 'url' => route('services.index'), 'active' => request()->routeIs('services.*')],
+            ['label' => __('Exams'), 'icon' => 'bi-pencil-square', 'url' => route('exams.index'), 'active' => request()->routeIs('exams.*')],
+        ],
+        __('Management') => [
+            ['label' => __('User Management'), 'icon' => 'bi-people', 'url' => route('user.index'), 'active' => request()->routeIs('user.*')],
+        ],
+        __('Account') => [
+            ['label' => __('Change password'), 'icon' => 'bi-key', 'url' => route('change.password'), 'active' => request()->routeIs('change.password')],
+        ],
+    ];
+@endphp
 
-            <!-- Topbar Brand Logo -->
-            <div class="logo-topbar">
-                <!-- Logo light -->
-                <a href="{{ url('dashboard') }}" class="logo-light">
-                    <span class="logo-lg">
-                        <img src="{{ getSiteSetting('logo_image') }}" alt="logo">
-                    </span>
-                    <span class="logo-sm">
-                        <img src="{{ getSiteSetting('logo_image') }}" alt="small logo">
-                    </span>
-                </a>
-            </div>
-
-
-        </div>
-
-        <ul class="topbar-menu d-flex align-items-center gap-3">
-            <form method="POST" action="{{ route('logout') }}" class="m-0">
-                @csrf
-                <button type="submit" class="dropdown-item">
-                <i class="bi bi-box-arrow-right fs-18 align-middle me-1"></i>
-                <span>Logout</span>
-            </button>
-            </form>
-            <li class="dropdown d-lg-none">
-                <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button"
-                    aria-haspopup="false" aria-expanded="false">
-                    <i class="bi bi-search fs-22"></i>
-                </a>
-                <div class="dropdown-menu dropdown-menu-animated dropdown-lg p-0">
-                    <form class="p-3">
-                        <input type="search" class="form-control" placeholder="Search ..." aria-label="Search">
-                    </form>
-                </div>
-            </li>
-
-            <li class="dropdown">
-                <a class="nav-link dropdown-toggle arrow-none nav-user" data-bs-toggle="dropdown" href="#"
-                    role="button" aria-haspopup="false" aria-expanded="false">
-                    <span class="account-user-avatar">
-                        {{-- <img src="assets/images/users/avatar-1.jpg" alt="user-image" width="32" class="rounded-circle"> --}}
-                    </span>
-                    <span class="d-lg-block d-none">
-                        <h5 class="my-0 fw-normal">{{ Auth::user()->name }}</h5>
-                    </span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated profile-dropdown">
-                    <!-- item-->
-                    <div class="dropdown-header noti-title">
-                        <h6 class="text-overflow m-0">Welcome!</h6>
-                    </div>
-
-
-                    <!-- item-->
-                    <form method="POST" action="{{ route('logout') }}" class="m-0">
-                        @csrf
-                        <button type="submit" class="dropdown-item">
-                        <i class="bi bi-box-arrow-right fs-18 align-middle me-1"></i>
-                        <span>Logout</span>
-                    </button>
-                    </form>
-                </div>
-            </li>
-        </ul>
-
-    </div>
-</div>
+@include('admin.sidebar.partials.topbar')
 
 <div class="leftside-menu">
 
-    <!-- Brand Logo Dark -->
-    <a href="{{ url('dashboard') }}" class="logo logo-dark" style="height: 120px; margin-top: -10px;">
-        <span class="logo-lg">
-            <img src="{{ getSiteSetting('logo_image') }}" alt="dark logo" style="height: 100%; width: 120px;">
-        </span>
-        <span class="logo-sm">
-            <img src="{{ asset('Innov8itcode/assets/img/logo.png') }}" alt="small logo">
-        </span>
-    </a>
+    @include('admin.sidebar.partials.brand')
 
     <!-- Sidebar -left -->
-    <div class="h-100" id="leftside-menu-container" data-simplebar style="border-top: 1px solid;">
-        <!--- Sidemenu -->
-        <ul class="side-nav" style="margin-bottom: 100px;">
+    <div class="h-100" id="leftside-menu-container" data-simplebar>
+        <ul class="side-nav">
+            @foreach ($menu as $section => $items)
+                <li class="side-nav-title">{{ $section }}</li>
 
-            {{-- <li class="side-nav-title">Main</li> --}}
-
-            <li class="side-nav-item">
-                <a href="{{ url('dashboard') }}" class="side-nav-link">
-                    <i class="bi-speedometer"></i>
-                    <span> Dashboard </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
-                <a href="{{ route('dashboard.site-settings.index') }}" class="side-nav-link">
-                    <i class="bi-gear"></i>
-                    <span> Site Settings </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
-                <a href="{{ url('cms/banner') }}" class="side-nav-link">
-                    <i class="bi-calendar-week-fill"></i>
-                    <span> Banner Management </span>
-                </a>
-            </li>
-            <li class="side-nav-item">
-                <a href="{{ url('cms/news') }}" class="side-nav-link">
-                    <i class="bi-book"></i>
-                    <span> News Management </span>
-                </a>
-            </li>
-            <li class="side-nav-item">
-                <a href="{{ url('dashboard/user') }}" class="side-nav-link">
-                    <i class="bi-person"></i>
-                    <span> User Management </span>
-                </a>
-            </li>
-            <li class="side-nav-item">
-                <a href="{{ url('cms/bod') }}" class="side-nav-link">
-                    <i class="bi-person"></i>
-                    <span> Board Members</span>
-                </a>
-            </li>
-            <li class="side-nav-item">
-                <a href="{{ url('cms/staff') }}" class="side-nav-link">
-                    <i class="bi-people-fill"></i>
-                    <span> Staff Management</span>
-                </a>
-            </li>
-
-
-
-
-
-
-
-
-
-            <li class="side-nav-item">
-                <a href="{{ url('cms/legal-documents') }}" class="side-nav-link">
-                    <i class="bi-file-earmark-pdf"></i>
-                    <span>Legal Documents</span>
-                </a>
-            </li>
-
-
-
-            <li class="side-nav-item">
-                <a href="{{ url('cms/gallery') }}" class="side-nav-link">
-                    <i class="bi-image"></i>
-                    <span> Gallery Management </span>
-                </a>
-            </li>
-
-
-
-
-            <li class="side-nav-item">
-                <a href="{{ url('cms/page') }}" class="side-nav-link">
-                    <i class="bi-file"></i>
-                    <span> Page Management </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
-                <a href="{{ url('cms/post') }}" class="side-nav-link">
-                    <i class="bi-file-earmark-post"></i>
-                    <span> Post Management </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
-                <a href="{{ route('change.password') }}" class="side-nav-link">
-                    <i class="bi-gear"></i>
-                    <span> Settings </span>
-                </a>
-            </li>
-
-
-
+                @foreach ($items as $item)
+                    <li class="side-nav-item {{ $item['active'] ? 'menuitem-active' : '' }}">
+                        <a href="{{ $item['url'] }}" class="side-nav-link {{ $item['active'] ? 'active' : '' }}">
+                            <i class="bi {{ $item['icon'] }}"></i>
+                            <span> {{ $item['label'] }} </span>
+                        </a>
+                    </li>
+                @endforeach
+            @endforeach
         </ul>
-        <!--- End Sidemenu -->
 
         <div class="clearfix"></div>
     </div>

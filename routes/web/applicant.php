@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Applicant\ApplicationController;
+use App\Http\Controllers\Applicant\ExamApplicationController;
 use App\Http\Controllers\Applicant\LookupController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,11 @@ Route::middleware(['auth', 'role:applicant'])->prefix('dashboard/application')->
     Route::post('qualifications', [ApplicationController::class, 'saveQualifications'])->name('qualifications.save');
     Route::get('trainings', [ApplicationController::class, 'trainings'])->name('trainings');
     Route::post('trainings', [ApplicationController::class, 'saveTrainings'])->name('trainings.save');
+
+    // Applying for exams (application calls)
+    Route::get('exams', [ExamApplicationController::class, 'index'])->name('exams');
+    Route::post('exams/{exam}/apply', [ExamApplicationController::class, 'apply'])->middleware('throttle:10,1')->name('exams.apply');
+    Route::get('my-applications', [ExamApplicationController::class, 'applications'])->name('applications');
 });
 
 // Lookups used by the form, plus viewing uploaded files (owner or admin only)

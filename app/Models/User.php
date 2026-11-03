@@ -98,6 +98,11 @@ class User extends Authenticatable
         return $this->hasMany(ApplicantTraining::class);
     }
 
+    public function examApplications()
+    {
+        return $this->hasMany(ExamApplication::class);
+    }
+
     /** Which applicant form steps already have saved data. */
     public function applicationProgress(): array
     {
