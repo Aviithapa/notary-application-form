@@ -82,6 +82,71 @@ class ExamApplicationController extends Controller
         return redirect()->route('applicant.applications')->with('success', __('Your application has been submitted.'));
     }
 
+    /** The application form again, for fixing and resubmitting a rejected application. */
+    public function editResubmit(ExamApplication $application)
+    {
+        $user = $this->user();
+        abort_unless($application->user_id === $user->id, 404);
+        $application->load(['exam.service', 'media']);
+        if ($redirect = $this->cannotResubmit($application, $user)) {
+            return $redirect;
+        }
+
+        return view('admin.pages.applicant.exam-apply', [
+            'exam' => $application->exam,
+            'user' => $user->loadApplicationForm(),
+            'fee' => $application->fee_amount,
+            'doubleFee' => $application->is_double_fee,
+            'application' => $application,
+        ]);
+    }
+
+    public function resubmit(ExamApplicationRequest $request, ExamApplication $application)
+    {
+        $user = $this->user();
+        $application->load(['exam.service', 'media']);
+        if ($redirect = $this->cannotResubmit($application, $user)) {
+            return $redirect;
+        }
+
+        DB::transaction(function () use ($request, $application, $user) {
+            if ($application->fee_amount !== null) {
+                $application->update(['paid_amount' => $request->validated('paid_amount')]);
+            }
+
+            // Replace only the files the applicant chose again; the rest are kept
+            foreach ([ExamApplication::VOUCHER, ...array_keys(ExamApplication::IDENTITY_MARKS)] as $collection) {
+                if ($request->hasFile($collection)) {
+                    $application->addMediaFromRequest($collection)->toMediaCollection($collection);
+                }
+            }
+
+            $application->changeStatus(ExamApplication::PENDING, __('Resubmitted by the applicant.'), $user);
+        });
+
+        return redirect()->route('applicant.applications.show', $application)
+            ->with('success', __('Your application has been resubmitted.'));
+    }
+
+    /** Redirect explaining why this application cannot be resubmitted now, or null if it can. */
+    private function cannotResubmit(ExamApplication $application, User $user): ?RedirectResponse
+    {
+        $back = redirect()->route('applicant.applications.show', $application);
+
+        if ($application->status !== ExamApplication::REJECTED) {
+            return $back->with('error', __('Only rejected applications can be resubmitted.'));
+        }
+        if (! $application->canResubmit()) {
+            return $back->with('error', __('The application period has closed. Contact the council to reopen your application.'));
+        }
+        if ($application->exam->service->requires_application_form && ! $this->formComplete($user)) {
+            return redirect()->route('applicant.personal')
+                ->with('error', __('Complete your personal details and qualifications before applying.'));
+        }
+
+        return null;
+    }
+
     /** Redirect explaining why this user cannot apply to the exam now, or null if they can. */
     private function cannotApply(Exam $exam, User $user): ?RedirectResponse
     {

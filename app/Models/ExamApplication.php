@@ -146,6 +146,17 @@ class ExamApplication extends Model implements HasMedia
         return in_array($this->status, self::ADMIT_CARD_STATUSES, true);
     }
 
+    /**
+     * The applicant may fix and resubmit a rejected application while the exam is still taking
+     * applications. Otherwise only an admin can reopen it.
+     */
+    public function canResubmit(): bool
+    {
+        return $this->status === self::REJECTED
+            && $this->exam->service->is_active
+            && $this->exam->isAcceptingApplications();
+    }
+
     /** Roll number as printed on the admit card, e.g. 00042. */
     public function rollNumberLabel(): ?string
     {

@@ -2,13 +2,35 @@
 
 @php
     use App\Models\ExamApplication;
+
+    // Set when fixing and resubmitting a rejected application; files then become optional
+    $application ??= null;
+    $resubmitting = $application !== null;
     $money = fn ($amount) => __('Rs.') . ' ' . number_format((float) $amount, 2);
-    $deadlineBs = $doubleFee ? $exam->double_fee_end_bs : $exam->application_end_bs;
-    $deadlineAd = $doubleFee ? $exam->double_fee_end_ad : $exam->application_end_ad;
+    // Resubmission is open until the very last application date
+    $untilLast = $doubleFee || ($resubmitting && $exam->double_fee_end_ad);
+    $deadlineBs = $untilLast ? $exam->double_fee_end_bs : $exam->application_end_bs;
+    $deadlineAd = $untilLast ? $exam->double_fee_end_ad : $exam->application_end_ad;
 @endphp
 
 @section('content')
-    @include('admin.component.breadcrumb', ['title' => __('Application form')])
+    @include('admin.component.breadcrumb', ['title' => $resubmitting ? __('Resubmit application') : __('Application form')])
+
+    @if ($resubmitting)
+        <div class="alert alert-danger">
+            <div class="fw-semibold mb-1"><i class="bi bi-x-octagon me-1"></i> {{ __('Your application :number was rejected.', ['number' => $application->application_number]) }}</div>
+            @if ($application->remarks)
+                <div>{{ __('Reason for rejection') }}: {{ $application->remarks }}</div>
+            @endif
+            <div class="small mt-2">
+                {{ __('Fix the problem, then resubmit below.') }}
+                {{ __('To change personal details, qualifications or trainings, edit them first:') }}
+                <a href="{{ route('applicant.personal') }}" class="alert-link">{{ __('Personal details') }}</a> ·
+                <a href="{{ route('applicant.qualifications') }}" class="alert-link">{{ __('Qualifications') }}</a> ·
+                <a href="{{ route('applicant.trainings') }}" class="alert-link">{{ __('Trainings') }}</a>
+            </div>
+        </div>
+    @endif
 
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -55,8 +77,10 @@
 
         {{-- Form --}}
         <div class="col-xl-8 order-xl-1">
-            <form action="{{ route('applicant.exams.apply', $exam) }}" method="POST" enctype="multipart/form-data" novalidate>
+            <form action="{{ $resubmitting ? route('applicant.applications.resubmit', $application) : route('applicant.exams.apply', $exam) }}"
+                method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
+                @if ($resubmitting) @method('PUT') @endif
 
                 @if ($fee !== null)
                     <div class="card">
@@ -71,7 +95,7 @@
                                     <div class="input-group has-validation">
                                         <span class="input-group-text">{{ __('Rs.') }}</span>
                                         <input type="number" step="0.01" min="{{ $fee }}" class="form-control @error('paid_amount') is-invalid @enderror"
-                                            id="paid_amount" name="paid_amount" value="{{ old('paid_amount', $fee) }}" required>
+                                            id="paid_amount" name="paid_amount" value="{{ old('paid_amount', $application?->paid_amount ?? $fee) }}" required>
                                         @error('paid_amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
                                     <div class="form-text">{{ __('Amount shown on your bank voucher.') }}</div>
@@ -84,6 +108,7 @@
                                         'accept' => 'image/jpeg,image/png,image/webp,application/pdf',
                                         'hint' => __('JPG, PNG, WEBP or PDF, up to 2 MB.'),
                                         'icon' => 'bi-receipt',
+                                        'existing' => $application?->getFirstMedia(ExamApplication::VOUCHER),
                                     ])
                                 </div>
                             </div>
@@ -106,6 +131,7 @@
                                         'accept' => 'image/jpeg,image/png,image/webp',
                                         'hint' => __('JPG, PNG or WEBP, up to 2 MB.'),
                                         'icon' => $collection === ExamApplication::SIGNATURE ? 'bi-pen' : 'bi-fingerprint',
+                                        'existing' => $application?->getFirstMedia($collection),
                                     ])
                                 </div>
                             @endforeach
@@ -130,9 +156,9 @@
                 </div>
 
                 <div class="d-flex justify-content-between gap-2 mb-3">
-                    <a href="{{ route('applicant.exams') }}" class="btn btn-light"><i class="bi bi-arrow-left me-1"></i> {{ __('Back') }}</a>
+                    <a href="{{ $resubmitting ? route('applicant.applications.show', $application) : route('applicant.exams') }}" class="btn btn-light"><i class="bi bi-arrow-left me-1"></i> {{ __('Back') }}</a>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-send me-1"></i> {{ __('Submit application') }}
+                        <i class="bi bi-send me-1"></i> {{ $resubmitting ? __('Resubmit application') : __('Submit application') }}
                     </button>
                 </div>
             </form>

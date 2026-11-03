@@ -13,15 +13,16 @@ class ExamApplicationRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true;
+        // Only the owner may resubmit an application
+        return ! $this->resubmitting() || $this->route('application')->user_id === $this->user()->id;
     }
 
     public function rules(): array
     {
-        /** @var Exam $exam */
-        $exam = $this->route('exam');
-        $fee = $exam->currentFee();
-        $image = ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:' . self::MAX_UPLOAD_KB];
+        $fee = $this->fee();
+        // A resubmission keeps its current files unless new ones are chosen
+        $presence = $this->resubmitting() ? 'nullable' : 'required';
+        $image = [$presence, 'image', 'mimes:jpg,jpeg,png,webp', 'max:' . self::MAX_UPLOAD_KB];
 
         $rules = [
             ExamApplication::SIGNATURE => $image,
@@ -30,9 +31,9 @@ class ExamApplicationRequest extends FormRequest
             'declaration' => ['accepted'],
         ];
 
-        // Payment proof only for fee-based services; the amount must cover today's fee
+        // Payment proof only for fee-based services; the amount must cover the fee
         if ($fee !== null) {
-            $rules[ExamApplication::VOUCHER] = ['required', 'file', self::DOCUMENT_MIMES, 'max:' . self::MAX_UPLOAD_KB];
+            $rules[ExamApplication::VOUCHER] = [$presence, 'file', self::DOCUMENT_MIMES, 'max:' . self::MAX_UPLOAD_KB];
             $rules['paid_amount'] = ['required', 'numeric', 'min:' . $fee, 'max:99999999'];
         }
 
@@ -41,12 +42,28 @@ class ExamApplicationRequest extends FormRequest
 
     public function messages(): array
     {
+        return [
+            'paid_amount.min' => __('The amount paid must be at least Rs. :fee.', ['fee' => number_format((float) $this->fee(), 2)]),
+            'declaration.accepted' => __('Please confirm the declaration.'),
+        ];
+    }
+
+    /** True on the resubmit route, which carries the existing application instead of the exam. */
+    public function resubmitting(): bool
+    {
+        return $this->route('application') instanceof ExamApplication;
+    }
+
+    /** Fee due: fixed on the application when resubmitting, otherwise today's fee for the exam. */
+    public function fee(): ?string
+    {
+        if ($this->resubmitting()) {
+            return $this->route('application')->fee_amount;
+        }
+
         /** @var Exam $exam */
         $exam = $this->route('exam');
 
-        return [
-            'paid_amount.min' => __('The amount paid must be at least Rs. :fee.', ['fee' => number_format((float) $exam->currentFee(), 2)]),
-            'declaration.accepted' => __('Please confirm the declaration.'),
-        ];
+        return $exam->currentFee();
     }
 }

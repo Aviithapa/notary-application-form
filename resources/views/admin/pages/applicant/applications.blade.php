@@ -78,6 +78,11 @@
                                         <a href="{{ route('applicant.applications.show', $application) }}" class="btn btn-sm btn-primary text-nowrap" style="background-color: #003893; border-color: #003893;">
                                             <i class="bi bi-eye"></i> {{ __('View application') }}
                                         </a>
+                                        @if ($application->canResubmit())
+                                            <a href="{{ route('applicant.applications.resubmit.form', $application) }}" class="btn btn-sm btn-warning text-nowrap mt-1">
+                                                <i class="bi bi-arrow-repeat"></i> {{ __('Edit & resubmit') }}
+                                            </a>
+                                        @endif
                                         @if ($application->hasAdmitCard())
                                             <a href="{{ route('applicant.applications.admit-card', $application) }}" class="btn btn-sm btn-success text-nowrap mt-1" target="_blank">
                                                 <i class="bi bi-person-badge"></i> {{ __('Admit card') }}

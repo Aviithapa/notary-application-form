@@ -73,6 +73,34 @@
             </div>
         @endif
 
+        {{-- Applicant: how to fix and resubmit a rejected application --}}
+        @if (! $admin && $current === ExamApplication::REJECTED)
+            <div class="border rounded p-3 bg-light no-print">
+                @if ($application->canResubmit())
+                    <div class="fw-semibold mb-2">{{ __('How to resubmit') }}</div>
+                    <ol class="small mb-3 ps-3">
+                        <li>{{ __('Read the reason above and fix the problem.') }}
+                            {{ __('Change your') }}
+                            <a href="{{ route('applicant.personal') }}">{{ __('personal details') }}</a>,
+                            <a href="{{ route('applicant.qualifications') }}">{{ __('qualifications') }}</a> {{ __('or') }}
+                            <a href="{{ route('applicant.trainings') }}">{{ __('trainings') }}</a> {{ __('if needed.') }}
+                        </li>
+                        <li>{{ __('Open the resubmit form, replace the voucher, signature or thumbprints if needed, and confirm the declaration.') }}</li>
+                        <li>{{ __('Your application goes back to Pending for the council to review again.') }}</li>
+                    </ol>
+                    <a href="{{ route('applicant.applications.resubmit.form', $application) }}" class="btn btn-warning">
+                        <i class="bi bi-arrow-repeat me-1"></i> {{ __('Edit & resubmit') }}
+                    </a>
+                    <span class="small text-muted ms-2">
+                        {{ __('Possible until :date', ['date' => $application->exam->lastApplicationDate() ? \App\Support\NepaliDate::adToBs($application->exam->lastApplicationDate()) . ' ' . __('B.S.') : '—']) }}
+                    </span>
+                @else
+                    <i class="bi bi-lock me-1"></i>
+                    {{ __('The application period has closed. Contact the council to reopen your application.') }}
+                @endif
+            </div>
+        @endif
+
         {{-- Admin actions: one button per allowed next status --}}
         @if ($admin && $application->nextStatuses())
             <form action="{{ route('exams.applications.status', [$application->exam, $application]) }}" method="POST" class="border rounded p-3 bg-light no-print">
