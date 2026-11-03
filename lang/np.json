@@ -589,5 +589,11 @@
     "The application period has closed. Contact the council to reopen your application.": "आवेदन अवधि सकिएको छ। आवेदन पुनः खोल्न परिषद्मा सम्पर्क गर्नुहोस्।",
     "Resubmitted by the applicant.": "आवेदकद्वारा पुनः पेश गरिएको।",
     "Your application has been resubmitted.": "तपाईंको आवेदन पुनः पेश भयो।",
-    "Only rejected applications can be resubmitted.": "अस्वीकृत आवेदन मात्र पुनः पेश गर्न सकिन्छ।"
+    "Only rejected applications can be resubmitted.": "अस्वीकृत आवेदन मात्र पुनः पेश गर्न सकिन्छ।",
+    "All applications": "सबै आवेदनहरू",
+    "All exams": "सबै परीक्षाहरू",
+    ":count application|:count applications": ":count आवेदन|:count आवेदन",
+    "no exam": "परीक्षा नभएको",
+    "Open applications": "आवेदन खोल्नुहोस्",
+    "Create a service first, then open its application period here.": "पहिले सेवा बनाउनुहोस्, त्यसपछि यहाँ आवेदन अवधि खोल्नुहोस्।"
 }

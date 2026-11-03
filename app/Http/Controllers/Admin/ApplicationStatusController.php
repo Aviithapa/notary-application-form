@@ -26,7 +26,8 @@ class ApplicationStatusController extends Controller
         return back()->with('success', __('Status changed to :status.', ['status' => $application->statusLabel()]));
     }
 
-    public function bulk(Request $request, Exam $exam)
+    /** Applies one status to the ticked applications, from any exam's or service's list. */
+    public function bulk(Request $request)
     {
         $data = $this->validated($request) + $request->validate([
             'applications' => ['required', 'array', 'max:500'],
@@ -35,7 +36,7 @@ class ApplicationStatusController extends Controller
 
         $changed = 0;
         $skipped = 0;
-        $exam->applications()->whereIn('id', $data['applications'])->orderBy('id')->get()
+        ExamApplication::whereIn('id', $data['applications'])->orderBy('id')->get()
             ->each(function (ExamApplication $application) use ($data, $request, &$changed, &$skipped) {
                 try {
                     $application->changeStatus($data['status'], $data['remarks'] ?? null, $request->user());

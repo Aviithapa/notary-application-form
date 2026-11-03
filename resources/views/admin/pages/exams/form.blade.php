@@ -4,6 +4,9 @@
     $editing = $exam->exists;
     $v = fn (string $field) => old($field, $exam->{$field});
     $field = 'admin.pages.applicant.partials.input';
+    // The exam schedule only applies to services that have an exam
+    $selectedService = $services->firstWhere('id', (int) $v('service_id'));
+    $hasExam = $selectedService?->requires_exam ?? true;
 @endphp
 
 @section('content')
@@ -11,7 +14,7 @@
 
     @if ($services->isEmpty())
         <div class="alert alert-warning">
-            {{ __('Turn on "Exam associated" for a service, then create its exams here.') }}
+            {{ __('Create a service first, then open its application period here.') }}
             <a href="{{ route('services.index') }}" class="alert-link">{{ __('Go to services') }}</a>
         </div>
     @endif
@@ -29,7 +32,9 @@
                         <select class="form-select @error('service_id') is-invalid @enderror" id="service_id" name="service_id">
                             <option value="">{{ __('Select service') }}</option>
                             @foreach ($services as $service)
-                                <option value="{{ $service->id }}" @selected((string) $v('service_id') === (string) $service->id)>{{ $service->localized('name') }}</option>
+                                <option value="{{ $service->id }}" data-requires-exam="{{ $service->requires_exam ? 1 : 0 }}" @selected((string) $v('service_id') === (string) $service->id)>
+                                    {{ $service->localized('name') }}@unless ($service->requires_exam) ({{ __('no exam') }})@endunless
+                                </option>
                             @endforeach
                         </select>
                         @error('service_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -75,7 +80,8 @@
             </div>
         </div>
 
-        <div class="card">
+        {{-- Disabled (so nothing is submitted) and hidden for a service without an exam --}}
+        <fieldset class="card" id="exam-schedule" @disabled(! $hasExam) @if (! $hasExam) hidden @endif>
             <div class="card-body">
                 <h5 class="card-title mb-3">{{ __('Exam schedule') }}</h5>
                 <div class="row g-3">
@@ -96,7 +102,7 @@
                     @include($field, ['name' => 'pass_marks', 'label' => __('Pass marks'), 'value' => $v('pass_marks'), 'type' => 'number', 'placeholder' => __('e.g. 40')])
                 </div>
             </div>
-        </div>
+        </fieldset>
 
         <div class="d-flex gap-2 justify-content-end">
             <a href="{{ route('exams.index') }}" class="btn btn-light">{{ __('Cancel') }}</a>
@@ -106,5 +112,22 @@
         </div>
     </form>
 @endsection
+
+@push('scripts')
+    <script>
+        // Show the exam schedule only when the chosen service has an exam
+        (function () {
+            const service = document.getElementById('service_id');
+            const schedule = document.getElementById('exam-schedule');
+            const sync = () => {
+                const option = service.selectedOptions[0];
+                const hasExam = !option || !option.value || option.dataset.requiresExam === '1';
+                schedule.hidden = !hasExam;
+                schedule.disabled = !hasExam;
+            };
+            service.addEventListener('change', sync);
+        })();
+    </script>
+@endpush
 
 @include('admin.pages.applicant.partials.scripts')

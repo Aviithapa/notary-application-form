@@ -87,11 +87,9 @@
                                 <a href="{{ route('services.edit', $service) }}" class="btn btn-sm btn-light">
                                     <i class="bi bi-pencil"></i> {{ __('Edit') }}
                                 </a>
-                                @if ($service->requires_exam)
-                                    <a href="{{ route('exams.create', ['service' => $service->id]) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-plus-lg"></i> {{ __('Create exam') }}
-                                    </a>
-                                @endif
+                                <a href="{{ route('exams.create', ['service' => $service->id]) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus-lg"></i> {{ $service->requires_exam ? __('Create exam') : __('Open applications') }}
+                                </a>
                                 @include('admin.pages.services.partials.delete', ['service' => $service, 'class' => 'ms-auto'])
                             </div>
                         </div>
@@ -142,9 +140,8 @@
                                     </td>
                                     <td class="text-end text-nowrap">
                                         <a href="{{ route('services.edit', $service) }}" class="btn btn-sm btn-light" title="{{ __('Edit') }}"><i class="bi bi-pencil"></i></a>
-                                        @if ($service->requires_exam)
-                                            <a href="{{ route('exams.create', ['service' => $service->id]) }}" class="btn btn-sm btn-outline-primary" title="{{ __('Create exam') }}"><i class="bi bi-plus-lg"></i></a>
-                                        @endif
+                                        <a href="{{ route('exams.create', ['service' => $service->id]) }}" class="btn btn-sm btn-outline-primary"
+                                            title="{{ $service->requires_exam ? __('Create exam') : __('Open applications') }}"><i class="bi bi-plus-lg"></i></a>
                                         @include('admin.pages.services.partials.delete', ['service' => $service, 'compact' => true])
                                     </td>
                                 </tr>

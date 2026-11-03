@@ -26,8 +26,8 @@
             @if ($services->isEmpty())
                 <div class="text-center py-5">
                     <i class="bi bi-pencil-square text-muted" style="font-size: 2.5rem;"></i>
-                    <h5 class="mt-3">{{ __('No service has exams turned on') }}</h5>
-                    <p class="text-muted">{{ __('Turn on "Exam associated" for a service, then create its exams here.') }}</p>
+                    <h5 class="mt-3">{{ __('No services yet') }}</h5>
+                    <p class="text-muted">{{ __('Create a service first, then open its application period here.') }}</p>
                     <a href="{{ route('services.index') }}" class="btn btn-primary">{{ __('Go to services') }}</a>
                 </div>
             @elseif ($exams->isEmpty())

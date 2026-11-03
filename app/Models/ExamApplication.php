@@ -11,7 +11,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 /**
  * An applicant's application to an exam (application call). Status workflow:
  * pending -> approved -> ready for admit card -> admit card generated -> passed / failed,
- * with rejected possible before the admit card. Every change is logged in statusLogs.
+ * with rejected possible before the admit card. For a service without an exam it stops at
+ * approved (see NO_EXAM_STATUSES). Every change is logged in statusLogs.
  */
 class ExamApplication extends Model implements HasMedia
 {
@@ -59,6 +60,9 @@ class ExamApplication extends Model implements HasMedia
         self::FAILED => [self::PASSED],
         self::REJECTED => [self::PENDING],
     ];
+
+    /** A service without an exam only needs a decision: no admit card, no result. */
+    public const NO_EXAM_STATUSES = [self::PENDING, self::APPROVED, self::REJECTED];
 
     /** While every application is in one of these, the applicant may still edit their form. */
     public const PROFILE_EDITABLE_STATUSES = [self::PENDING, self::REJECTED];
@@ -130,10 +134,23 @@ class ExamApplication extends Model implements HasMedia
         return self::STATUSES[$this->status][1] ?? 'bg-light text-dark';
     }
 
-    /** @return string[] statuses this application can move to next */
+    /**
+     * Statuses used by a service's workflow (all of them when no service is given).
+     *
+     * @return string[]
+     */
+    public static function statusesFor(?Service $service): array
+    {
+        return $service === null || $service->requires_exam ? array_keys(self::STATUSES) : self::NO_EXAM_STATUSES;
+    }
+
+    /** @return string[] statuses this application can move to next, within its service's workflow */
     public function nextStatuses(): array
     {
-        return self::TRANSITIONS[$this->status] ?? [];
+        return array_values(array_intersect(
+            self::TRANSITIONS[$this->status] ?? [],
+            self::statusesFor($this->exam->service),
+        ));
     }
 
     public function canMoveTo(string $status): bool

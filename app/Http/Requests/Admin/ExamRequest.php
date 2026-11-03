@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Http\Requests\Applicant\Concerns\ValidatesApplicantInput;
 use App\Models\Exam;
+use App\Models\Service;
 use App\Support\NepaliDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,8 +31,7 @@ class ExamRequest extends FormRequest
         }
 
         return [
-            // Exams can only be created for services that require one
-            'service_id' => ['required', 'integer', Rule::exists('services', 'id')->where('requires_exam', true)],
+            'service_id' => ['required', 'integer', Rule::exists('services', 'id')],
             'title' => ['required', 'string', 'max:255'],
             'title_np' => ['nullable', 'string', 'max:255'],
             ...$dates,
@@ -43,11 +43,6 @@ class ExamRequest extends FormRequest
             'pass_marks' => ['nullable', 'integer', 'min:0', 'lte:full_marks'],
             'status' => ['required', Rule::in(array_keys(Exam::STATUSES))],
         ];
-    }
-
-    public function messages(): array
-    {
-        return ['service_id.exists' => __('Choose a service that requires an exam.')];
     }
 
     public function after(): array
@@ -86,6 +81,14 @@ class ExamRequest extends FormRequest
     public function examData(): array
     {
         $data = $this->validated();
+
+        // A service without an exam only has an application period: no schedule or marks
+        if (! Service::find($data['service_id'])->requires_exam) {
+            foreach (['exam_date_ad', 'exam_date_bs', 'start_time', 'duration_minutes', 'venue', 'venue_np', 'full_marks', 'pass_marks'] as $field) {
+                $data[$field] = null;
+            }
+        }
+
         foreach (self::DATES as $date) {
             [$data["{$date}_ad"], $data["{$date}_bs"]] =
                 NepaliDate::reconcile($data["{$date}_ad"] ?? null, $data["{$date}_bs"] ?? null);

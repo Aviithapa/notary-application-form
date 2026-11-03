@@ -6,7 +6,10 @@
     use App\Models\ExamApplication;
 
     // Main path shown as steps; rejected / failed are shown on the step where they happened
-    $path = [ExamApplication::PENDING, ExamApplication::APPROVED, ExamApplication::READY_FOR_ADMIT_CARD, ExamApplication::ADMIT_CARD_GENERATED, ExamApplication::PASSED];
+    // (a service without an exam stops at approved)
+    $path = $application->exam->service->requires_exam
+        ? [ExamApplication::PENDING, ExamApplication::APPROVED, ExamApplication::READY_FOR_ADMIT_CARD, ExamApplication::ADMIT_CARD_GENERATED, ExamApplication::PASSED]
+        : [ExamApplication::PENDING, ExamApplication::APPROVED];
     $current = $application->status;
     $reached = match ($current) {
         ExamApplication::REJECTED => array_search($application->statusLogs->firstWhere('to_status', ExamApplication::REJECTED)?->from_status, $path, true),
@@ -48,7 +51,8 @@
             @foreach ($path as $i => $step)
                 @php
                     $isEnd = $i === $reached && in_array($current, [ExamApplication::REJECTED, ExamApplication::FAILED], true);
-                    $state = $isEnd ? 'is-stopped' : ($i < $reached || ($i === $reached && $current === ExamApplication::PASSED) ? 'is-done' : ($i === $reached ? 'is-current' : ''));
+                    $finished = $i === $reached && $i === array_key_last($path) && ! $isEnd;
+                    $state = $isEnd ? 'is-stopped' : ($i < $reached || $finished ? 'is-done' : ($i === $reached ? 'is-current' : ''));
                     $label = $isEnd ? $application->statusLabel() : __(ExamApplication::STATUSES[$step][0]);
                 @endphp
                 <li class="{{ $state }}">

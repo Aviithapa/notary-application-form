@@ -3,6 +3,7 @@
 //Route Dashboard
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\ApplicationStatusController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExamController;
@@ -25,7 +26,8 @@ Route::middleware(['auth', 'admin:admin,super_admin'])->group(function () {
     Route::get('dashboard/exams/{exam}/applications', [ExamController::class, 'applications'])->name('exams.applications');
     Route::get('dashboard/exams/{exam}/applications/{application}', [ExamController::class, 'showApplication'])->name('exams.applications.show');
     Route::patch('dashboard/exams/{exam}/applications/{application}/status', [ApplicationStatusController::class, 'update'])->name('exams.applications.status');
-    Route::patch('dashboard/exams/{exam}/applications-status', [ApplicationStatusController::class, 'bulk'])->name('exams.applications.bulk-status');
+    Route::get('dashboard/applications', [ApplicationController::class, 'index'])->name('applications.index');
+    Route::patch('dashboard/applications/status', [ApplicationStatusController::class, 'bulk'])->name('applications.bulk-status');
     Route::get('dashboard/exams/{exam}/applications/{application}/admit-card', [ApplicationStatusController::class, 'admitCard'])->name('exams.applications.admit-card');
 
 });

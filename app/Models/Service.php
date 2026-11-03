@@ -53,6 +53,11 @@ class Service extends Model
         return $this->hasMany(Exam::class);
     }
 
+    public function applications()
+    {
+        return $this->hasManyThrough(ExamApplication::class, Exam::class);
+    }
+
     public function purposeLabel(): string
     {
         return __(self::PURPOSES[$this->purpose] ?? $this->purpose);

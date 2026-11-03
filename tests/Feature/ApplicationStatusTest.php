@@ -129,7 +129,7 @@ class ApplicationStatusTest extends TestCase
         $rejected = $this->application();
         $rejected->changeStatus(ExamApplication::REJECTED, 'Incomplete', $this->admin);
 
-        $this->actingAs($this->admin)->patch(route('exams.applications.bulk-status', $this->exam), [
+        $this->actingAs($this->admin)->patch(route('applications.bulk-status'), [
             'status' => ExamApplication::APPROVED,
             'applications' => [$pendingA->id, $pendingB->id, $rejected->id],
         ])->assertSessionHas('success', fn ($message) => str_contains($message, '2') && str_contains($message, '1'));
@@ -159,6 +159,82 @@ class ApplicationStatusTest extends TestCase
             ->assertSee('प्रवेश पत्र')->assertSee('00001')->assertSee('Applicant ' . $owner->id)->assertSee('2083-09-05')->assertSee('Council hall');
         $this->actingAs($this->admin)->get(route('exams.applications.admit-card', [$this->exam, $application]))->assertOk();
         $this->actingAs($this->userWithRole(RoleEnum::APPLICANT))->get(route('applicant.applications.admit-card', $application))->assertNotFound();
+    }
+
+    public function test_sidebar_lists_services_with_pending_counts_and_links_to_their_applications(): void
+    {
+        $licenceA = $this->application();
+        $licenceB = $this->application();
+        $this->application()->changeStatus(ExamApplication::APPROVED, null, $this->admin); // not pending
+
+        $renewal = Service::create([
+            'name' => 'Licence renewal', 'name_np' => 'नवीकरण', 'purpose' => 'renewal', 'icon' => 'bi-arrow-repeat',
+            'requires_exam' => true, 'is_active' => true,
+        ]);
+        $renewalExam = $renewal->exams()->create(['title' => 'Renewal call', 'status' => 'published']);
+        $applicant = $this->userWithRole(RoleEnum::APPLICANT);
+        $renewalApplication = $applicant->examApplications()->create(['exam_id' => $renewalExam->id]);
+        Service::create(['name' => 'Service without exams', 'name_np' => 'x', 'purpose' => 'other', 'icon' => 'bi-briefcase']);
+
+        $this->actingAs($this->admin);
+        $sidebar = $this->get(route('dashboard'))->assertOk();
+        $licenceUrl = route('applications.index', ['service' => $this->exam->service_id]);
+        $renewalUrl = route('applications.index', ['service' => $renewal->id]);
+        $sidebar->assertSee($licenceUrl, false)->assertSee($renewalUrl, false)->assertDontSee('Service without exams');
+        // Badges: licence 2 pending, renewal 1, all services 3
+        $html = $sidebar->getContent();
+        $this->assertMatchesRegularExpression('#' . preg_quote(e($licenceUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>2<#s', $html);
+        $this->assertMatchesRegularExpression('#' . preg_quote(e($renewalUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>1<#s', $html);
+        $this->assertMatchesRegularExpression('#' . preg_quote(e(route('applications.index')), '#') . '"[^>]*>.*?rounded-pill[^>]*>3<#s', $html);
+
+        // Service page lists only that service's applications, with status tabs
+        $this->get($licenceUrl)->assertOk()
+            ->assertSee($licenceA->application_number)->assertSee($licenceB->application_number)
+            ->assertDontSee($renewalApplication->application_number)
+            ->assertSee(e(route('applications.index', ['service' => $this->exam->service_id, 'status' => ExamApplication::PENDING])), false);
+        $this->get(route('applications.index', ['service' => $this->exam->service_id, 'status' => ExamApplication::APPROVED]))->assertOk()
+            ->assertDontSee($licenceA->application_number);
+        $this->get(route('applications.index'))->assertOk()->assertSee($renewalApplication->application_number)->assertSee('Renewal call');
+
+        // Bulk changes work from this page too, and the badge goes down
+        $this->from($licenceUrl)->patch(route('applications.bulk-status'), [
+            'status' => ExamApplication::APPROVED, 'applications' => [$licenceA->id],
+        ])->assertRedirect($licenceUrl);
+        $this->assertSame(ExamApplication::APPROVED, $licenceA->fresh()->status);
+        $this->assertMatchesRegularExpression('#' . preg_quote(e($licenceUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>1<#s', $this->get(route('dashboard'))->getContent());
+    }
+
+    public function test_service_without_exam_only_uses_pending_approved_rejected(): void
+    {
+        $service = Service::create([
+            'name' => 'Licence renewal', 'name_np' => 'नवीकरण', 'purpose' => 'renewal', 'icon' => 'bi-arrow-repeat',
+            'requires_exam' => false, 'is_active' => true,
+        ]);
+        $call = $service->exams()->create(['title' => 'Renewal call', 'status' => 'published']);
+        $application = $this->userWithRole(RoleEnum::APPLICANT)->examApplications()->create(['exam_id' => $call->id]);
+
+        $this->assertSame([ExamApplication::APPROVED, ExamApplication::REJECTED], $application->nextStatuses());
+
+        // List: only Pending / Approved / Rejected tabs and bulk options
+        $this->actingAs($this->admin);
+        foreach ([route('applications.index', ['service' => $service->id]), route('exams.applications', $call)] as $url) {
+            $page = $this->get($url)->assertOk()->assertSee(__('Pending'))->assertSee(__('Approved'))->assertSee(__('Rejected'))
+                ->assertDontSee(__('Ready for admit card'))->assertDontSee(__('Admit card generated'))
+                ->assertDontSee('>' . __('Passed'), false)->assertDontSee('>' . __('Failed'), false);
+        }
+
+        // Approved is the end of the workflow (it can only still be rejected): no admit card, no result
+        $this->patch(route('exams.applications.status', [$call, $application]), ['status' => ExamApplication::APPROVED])->assertSessionHas('success');
+        $this->assertSame([ExamApplication::REJECTED], $application->fresh()->nextStatuses());
+        $this->get(route('exams.applications.show', [$call, $application]))->assertOk()
+            ->assertDontSee(__('Mark ready for admit card'))->assertDontSee(__('Ready for admit card'));
+        $this->patch(route('exams.applications.status', [$call, $application]), ['status' => ExamApplication::READY_FOR_ADMIT_CARD])->assertSessionHas('error');
+
+        // Bulk skips statuses outside the workflow
+        $other = $this->userWithRole(RoleEnum::APPLICANT)->examApplications()->create(['exam_id' => $call->id]);
+        $other->changeStatus(ExamApplication::APPROVED, null, $this->admin);
+        $this->patch(route('applications.bulk-status'), ['status' => ExamApplication::PASSED, 'applications' => [$other->id]])->assertSessionHas('error');
+        $this->assertSame(ExamApplication::APPROVED, $other->fresh()->status);
     }
 
     public function test_applicants_cannot_change_status(): void

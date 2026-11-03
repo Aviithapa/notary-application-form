@@ -76,7 +76,7 @@ class ServiceManagementTest extends TestCase
         $this->assertFalse($service->requires_exam);
     }
 
-    public function test_exams_belong_to_services_that_require_them(): void
+    public function test_exams_for_services_with_and_without_an_exam(): void
     {
         $this->actingAs($this->userWithRole(RoleEnum::ADMIN));
         $withExam = Service::create($this->serviceData(['requires_exam' => true]));
@@ -84,9 +84,16 @@ class ServiceManagementTest extends TestCase
 
         $this->get(route('exams.create', ['service' => $withExam->id]))->assertOk();
 
+        // A service without an exam can open an application period; schedule fields are dropped
         $this->post(route('exams.store'), [
-            'service_id' => $withoutExam->id, 'title' => 'X', 'status' => 'draft',
-        ])->assertSessionHasErrors('service_id');
+            'service_id' => $withoutExam->id, 'title' => 'Renewal call', 'status' => 'published',
+            'application_start_ad' => '2026-11-01', 'application_end_ad' => '2026-11-15',
+            'exam_date_ad' => '2026-12-20', 'venue' => 'Hall', 'full_marks' => 100,
+        ])->assertSessionHasNoErrors();
+        $call = Exam::where('title', 'Renewal call')->firstOrFail();
+        $this->assertSame([null, null, null], [$call->exam_date_ad, $call->venue, $call->full_marks]);
+        $this->get(route('exams.create', ['service' => $withoutExam->id]))->assertOk()->assertSee('id="exam-schedule" disabled', false);
+        $call->delete();
 
         $this->post(route('exams.store'), [
             'service_id' => $withExam->id, 'title' => 'X', 'status' => 'draft', 'full_marks' => 100, 'pass_marks' => 120,

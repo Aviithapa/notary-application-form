@@ -59,7 +59,8 @@ class ExamController extends Controller
 
     public function applications(Request $request, Exam $exam)
     {
-        $status = array_key_exists($request->query('status'), ExamApplication::STATUSES) ? $request->query('status') : null;
+        $statuses = ExamApplication::statusesFor($exam->service);
+        $status = in_array($request->query('status'), $statuses, true) ? $request->query('status') : null;
 
         return view('admin.pages.exams.applications', [
             'exam' => $exam->load('service'),
@@ -68,6 +69,7 @@ class ExamController extends Controller
                 ->latest('id')->paginate(50)->withQueryString(),
             'statusCounts' => $exam->applications()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
             'status' => $status,
+            'statuses' => $statuses,
         ]);
     }
 
@@ -93,9 +95,9 @@ class ExamController extends Controller
         return back()->with('success', __('Exam deleted.'));
     }
 
-    /** Services an exam can belong to. */
+    /** Services an exam (application call) can belong to. */
     private function examServices()
     {
-        return Service::where('requires_exam', true)->ordered()->get();
+        return Service::ordered()->get();
     }
 }
