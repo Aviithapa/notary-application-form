@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ExamRequest;
 use App\Models\Exam;
+use App\Models\ExamApplication;
 use App\Models\Service;
 use Illuminate\Http\Request;
 
@@ -60,7 +61,17 @@ class ExamController extends Controller
     {
         return view('admin.pages.exams.applications', [
             'exam' => $exam->load('service'),
-            'applications' => $exam->applications()->with('user.applicantProfile')->latest('id')->paginate(50),
+            'applications' => $exam->applications()->with(['user.applicantProfile', 'media'])->latest('id')->paginate(50),
+        ]);
+    }
+
+    public function showApplication(Exam $exam, ExamApplication $application)
+    {
+        abort_unless($application->exam_id === $exam->id, 404);
+
+        return view('admin.pages.applications.show', [
+            'application' => $application->loadFullDetails(),
+            'backUrl' => route('exams.applications', $exam),
         ]);
     }
 

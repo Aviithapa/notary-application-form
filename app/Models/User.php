@@ -103,6 +103,19 @@ class User extends Authenticatable
         return $this->hasMany(ExamApplication::class);
     }
 
+    /** Loads the applicant form (profile with places and files, qualifications, trainings) for display. */
+    public function loadApplicationForm(): static
+    {
+        return $this->load([
+            'applicantProfile' => fn ($query) => $query->with([
+                'media', 'district', 'municipality', 'ward', 'citizenshipIssueDistrict',
+                'correspondenceDistrict', 'correspondenceMunicipality', 'correspondenceWard',
+            ]),
+            'qualifications.media',
+            'trainings.media',
+        ]);
+    }
+
     /** Which applicant form steps already have saved data. */
     public function applicationProgress(): array
     {

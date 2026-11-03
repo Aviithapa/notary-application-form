@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Applicant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Applicant\ExamApplicationRequest;
 use App\Models\Exam;
 use App\Models\ExamApplication;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Applicants see exams that are taking applications and apply to them. The fee is fixed at
- * the moment of applying: the service fee, or twice that in the double-fee period.
+ * Applicants see exams that are taking applications and apply through a form with payment proof,
+ * signature and thumbprints. The fee is fixed at the moment of applying: the service fee, or twice
+ * that in the double-fee period.
  */
 class ExamApplicationController extends Controller
 {
@@ -28,26 +32,49 @@ class ExamApplicationController extends Controller
         ]);
     }
 
-    public function apply(Exam $exam)
+    /** The application form: payment voucher, amount paid, signature and thumbprints. */
+    public function create(Exam $exam)
     {
         $user = $this->user();
         $exam->load('service');
-
-        if (! $exam->service->is_active || ! $exam->isAcceptingApplications()) {
-            return back()->with('error', __('Applications for this exam are not open.'));
+        if ($redirect = $this->cannotApply($exam, $user)) {
+            return $redirect;
         }
 
-        if ($exam->service->requires_application_form && ! $this->formComplete($user)) {
-            return redirect()->route('applicant.personal')
-                ->with('error', __('Complete your personal details and qualifications before applying.'));
+        return view('admin.pages.applicant.exam-apply', [
+            'exam' => $exam,
+            'user' => $user->loadApplicationForm(),
+            'fee' => $exam->currentFee(),
+            'doubleFee' => $exam->phase() === Exam::PHASE_DOUBLE_FEE,
+        ]);
+    }
+
+    public function apply(ExamApplicationRequest $request, Exam $exam)
+    {
+        $user = $this->user();
+        $exam->load('service');
+        if ($redirect = $this->cannotApply($exam, $user)) {
+            return $redirect;
         }
 
         try {
-            $user->examApplications()->create([
-                'exam_id' => $exam->id,
-                'fee_amount' => $exam->currentFee(),
-                'is_double_fee' => $exam->phase() === Exam::PHASE_DOUBLE_FEE,
-            ]);
+            DB::transaction(function () use ($request, $exam, $user) {
+                $fee = $exam->currentFee();
+                $application = $user->examApplications()->create([
+                    'exam_id' => $exam->id,
+                    'fee_amount' => $fee,
+                    'is_double_fee' => $exam->phase() === Exam::PHASE_DOUBLE_FEE,
+                    'paid_amount' => $fee === null ? null : $request->validated('paid_amount'),
+                ]);
+
+                $collections = array_keys(ExamApplication::IDENTITY_MARKS);
+                if ($fee !== null) {
+                    $collections[] = ExamApplication::VOUCHER;
+                }
+                foreach ($collections as $collection) {
+                    $application->addMediaFromRequest($collection)->toMediaCollection($collection);
+                }
+            });
         } catch (UniqueConstraintViolationException) {
             return redirect()->route('applicant.applications')->with('error', __('You have already applied for this exam.'));
         }
@@ -55,10 +82,39 @@ class ExamApplicationController extends Controller
         return redirect()->route('applicant.applications')->with('success', __('Your application has been submitted.'));
     }
 
+    /** Redirect explaining why this user cannot apply to the exam now, or null if they can. */
+    private function cannotApply(Exam $exam, User $user): ?RedirectResponse
+    {
+        if (! $exam->service->is_active || ! $exam->isAcceptingApplications()) {
+            return redirect()->route('applicant.exams')->with('error', __('Applications for this exam are not open.'));
+        }
+
+        if ($user->examApplications()->where('exam_id', $exam->id)->exists()) {
+            return redirect()->route('applicant.applications')->with('error', __('You have already applied for this exam.'));
+        }
+
+        if ($exam->service->requires_application_form && ! $this->formComplete($user)) {
+            return redirect()->route('applicant.personal')
+                ->with('error', __('Complete your personal details and qualifications before applying.'));
+        }
+
+        return null;
+    }
+
     public function applications()
     {
         return view('admin.pages.applicant.applications', [
             'applications' => $this->user()->examApplications()->with('exam.service')->latest('id')->get(),
+        ]);
+    }
+
+    public function show(ExamApplication $application)
+    {
+        abort_unless($application->user_id === $this->user()->id, 404);
+
+        return view('admin.pages.applications.show', [
+            'application' => $application->loadFullDetails(),
+            'backUrl' => route('applicant.applications'),
         ]);
     }
 

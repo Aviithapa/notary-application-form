@@ -26,6 +26,7 @@
                                 <th>{{ __('Fee') }}</th>
                                 <th>{{ __('Exam date') }}</th>
                                 <th>{{ __('Status') }}</th>
+                                <th class="text-end">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -50,6 +51,9 @@
                                         @if ($application->is_double_fee)
                                             <div><span class="badge bg-warning-subtle text-warning">{{ __('Double fee') }}</span></div>
                                         @endif
+                                        @if ($application->paid_amount !== null)
+                                            <div class="text-muted small">{{ __('Paid') }}: {{ __('Rs.') }} {{ number_format((float) $application->paid_amount, 2) }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-nowrap small">
                                         @if ($application->exam->exam_date_bs)
@@ -62,6 +66,11 @@
                                         @endif
                                     </td>
                                     <td><span class="badge bg-info-subtle text-info">{{ __(ucfirst($application->status)) }}</span></td>
+                                    <td class="text-end">
+                                        <a href="{{ route('applicant.applications.show', $application) }}" class="btn btn-sm btn-primary text-nowrap" style="background-color: #003893; border-color: #003893;">
+                                            <i class="bi bi-eye"></i> {{ __('View application') }}
+                                        </a>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

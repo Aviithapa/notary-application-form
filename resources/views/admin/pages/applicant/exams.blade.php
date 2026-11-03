@@ -88,13 +88,9 @@
                                         {{ __('Complete application form to apply') }}
                                     </a>
                                 @else
-                                    <form action="{{ route('applicant.exams.apply', $exam) }}" method="POST"
-                                        onsubmit="return confirm(@js(__('Apply for :exam? Fee: :fee', ['exam' => $exam->localized('title'), 'fee' => $money($exam->currentFee())])))">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-primary w-100" style="background-color: #003893; border-color: #003893;">
-                                            {{ __('Apply now') }} <i class="bi bi-arrow-right ms-1"></i>
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('applicant.exams.apply.form', $exam) }}" class="btn btn-sm btn-primary w-100" style="background-color: #003893; border-color: #003893;">
+                                        {{ __('Apply now') }} <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
                                 @endif
                             </div>
                         </div>

@@ -22,5 +22,6 @@ Route::middleware(['auth', 'admin:admin,super_admin'])->group(function () {
     Route::resource('dashboard/services', ServiceController::class)->except('show')->names('services');
     Route::resource('dashboard/exams', ExamController::class)->except('show')->names('exams');
     Route::get('dashboard/exams/{exam}/applications', [ExamController::class, 'applications'])->name('exams.applications');
+    Route::get('dashboard/exams/{exam}/applications/{application}', [ExamController::class, 'showApplication'])->name('exams.applications.show');
 
 });
