@@ -1,8 +1,9 @@
 {{--
-    Full-screen image viewer. Any link with data-gallery-item (href = image URL, optional data-caption)
-    opens here instead of a new tab. Prev/next steps through the other images in the same area
-    (the open modal, or the page outside modals). Zoom with the buttons, mouse wheel, +/- keys or
-    double-click; drag to move a zoomed image; swipe or arrow keys to change image; Esc closes.
+    Full-screen image viewer with a thumbnail strip of every image. Any link with data-gallery-item
+    (href = image URL, optional data-caption) opens here instead of a new tab. Prev/next and the strip
+    go through the other images in the same area (the open modal, or the page outside modals).
+    Zoom with the buttons, mouse wheel, +/- keys or double-click; drag to move a zoomed image;
+    swipe or arrow keys to change image; Esc closes.
 --}}
 @once
     @push('styles')
@@ -27,10 +28,23 @@
             .image-viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; font-size: 1.5rem; z-index: 1; }
             .image-viewer-prev { left: 1rem; }
             .image-viewer-next { right: 1rem; }
+            .image-viewer-strip { display: flex; gap: .5rem; padding: .6rem .9rem; overflow-x: auto; background: rgba(0, 0, 0, .35); scrollbar-width: thin; }
+            .image-viewer-strip[hidden] { display: none; }
+            .image-viewer-thumb {
+                flex: none; display: flex; flex-direction: column; align-items: center; gap: .25rem; width: 88px; padding: 0;
+                border: 0; background: none; color: rgba(255, 255, 255, .7); font-size: .7rem; opacity: .6;
+            }
+            .image-viewer-thumb img { width: 88px; height: 64px; object-fit: cover; border-radius: 6px; border: 2px solid transparent; background: #fff; }
+            .image-viewer-thumb span { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .image-viewer-thumb:hover, .image-viewer-thumb:focus-visible { opacity: 1; }
+            .image-viewer-thumb.is-active { opacity: 1; color: #fff; }
+            .image-viewer-thumb.is-active img { border-color: #4f8cff; }
             [data-gallery-item] { cursor: zoom-in; }
             @media (max-width: 575.98px) {
                 .image-viewer-nav { width: 40px; height: 40px; }
                 .image-viewer-hide-sm { display: none !important; }
+                .image-viewer-thumb { width: 64px; }
+                .image-viewer-thumb img { width: 64px; height: 48px; }
             }
         </style>
     @endpush
@@ -52,6 +66,7 @@
                 <img alt="" data-viewer-image draggable="false">
                 <button type="button" class="image-viewer-btn image-viewer-nav image-viewer-next" data-viewer-action="next" aria-label="{{ __('Next image') }}"><i class="bi bi-chevron-right"></i></button>
             </div>
+            <div class="image-viewer-strip" data-viewer-strip role="tablist" aria-label="{{ __('All images') }}"></div>
         </div>
 
         <script>
@@ -65,6 +80,7 @@
                 const original = viewer.querySelector('[data-viewer-original]');
                 const prevButton = viewer.querySelector('[data-viewer-action="prev"]');
                 const nextButton = viewer.querySelector('[data-viewer-action="next"]');
+                const strip = viewer.querySelector('[data-viewer-strip]');
                 const MIN = 1, MAX = 5, STEP = 0.25;
 
                 let items = [], index = 0, scale = 1, x = 0, y = 0, returnFocus = null;
@@ -90,8 +106,34 @@
                     original.href = item.href;
                     count.textContent = items.length > 1 ? `${index + 1} / ${items.length}` : '';
                     prevButton.hidden = nextButton.hidden = items.length < 2;
+                    strip.querySelectorAll('.image-viewer-thumb').forEach((thumb, i) => {
+                        thumb.classList.toggle('is-active', i === index);
+                        thumb.setAttribute('aria-selected', i === index ? 'true' : 'false');
+                    });
+                    strip.children[index]?.scrollIntoView({ block: 'nearest', inline: 'center' });
                     scale = 1; x = 0; y = 0;
                     apply();
+                }
+
+                // One thumbnail per image in the gallery; click to jump to it
+                function buildStrip() {
+                    strip.replaceChildren(...items.map((item, i) => {
+                        const thumb = document.createElement('button');
+                        thumb.type = 'button';
+                        thumb.className = 'image-viewer-thumb';
+                        thumb.setAttribute('role', 'tab');
+                        thumb.title = item.dataset.caption || '';
+                        const img = document.createElement('img');
+                        img.src = item.href;
+                        img.alt = '';
+                        img.loading = 'lazy';
+                        const label = document.createElement('span');
+                        label.textContent = item.dataset.caption || '';
+                        thumb.append(img, label);
+                        thumb.addEventListener('click', () => show(i));
+                        return thumb;
+                    }));
+                    strip.hidden = items.length < 2;
                 }
 
                 function open(link) {
@@ -104,6 +146,7 @@
                     returnFocus = document.activeElement;
                     viewer.hidden = false;
                     document.body.style.overflow = 'hidden';
+                    buildStrip();
                     show(items.indexOf(link));
                     viewer.querySelector('[data-viewer-action="close"]').focus();
                 }
