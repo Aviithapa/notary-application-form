@@ -20,6 +20,7 @@ Route::middleware(['auth', 'role:applicant'])->prefix('dashboard/application')->
     Route::post('exams/{exam}/apply', [ExamApplicationController::class, 'apply'])->middleware('throttle:10,1')->name('exams.apply');
     Route::get('my-applications', [ExamApplicationController::class, 'applications'])->name('applications');
     Route::get('my-applications/{application}', [ExamApplicationController::class, 'show'])->name('applications.show');
+    Route::get('my-applications/{application}/admit-card', [ExamApplicationController::class, 'admitCard'])->name('applications.admit-card');
 });
 
 // Lookups used by the form, plus viewing uploaded files (owner or admin only)

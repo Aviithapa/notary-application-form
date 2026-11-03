@@ -21,7 +21,13 @@
 
     <div class="d-flex justify-content-between gap-2 mb-3 no-print">
         <a href="{{ $backUrl }}" class="btn btn-light"><i class="bi bi-arrow-left me-1"></i> {{ __('Back') }}</a>
-        <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i> {{ __('Print') }}</button>
+        <div class="d-flex gap-2">
+            @if ($application->hasAdmitCard())
+                <a href="{{ $admin ?? false ? route('exams.applications.admit-card', [$exam, $application]) : route('applicant.applications.admit-card', $application) }}"
+                    class="btn btn-success" target="_blank"><i class="bi bi-person-badge me-1"></i> {{ __('Admit card') }}</a>
+            @endif
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i> {{ __('Print') }}</button>
+        </div>
     </div>
 
     {{-- Application summary --}}
@@ -41,7 +47,7 @@
                 <div class="flex-grow-1 w-100" style="min-width: 0;">
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                         <h4 class="m-0">{{ $profile?->localized('name') ?: $user->email }}</h4>
-                        <span class="badge bg-info-subtle text-info">{{ __(ucfirst($application->status)) }}</span>
+                        @include('admin.pages.applications.partials.status')
                     </div>
                     <div class="text-muted mb-3">{{ __('Application no.') }} <strong class="text-body">{{ $application->application_number }}</strong></div>
 
@@ -57,6 +63,8 @@
             </div>
         </div>
     </div>
+
+    @include('admin.pages.applications.partials.status-panel', ['admin' => $admin ?? false])
 
     {{-- Voucher, signature, thumbprints --}}
     <div class="card">

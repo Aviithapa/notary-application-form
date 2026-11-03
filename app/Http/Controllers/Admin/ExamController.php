@@ -57,11 +57,17 @@ class ExamController extends Controller
         return redirect()->route('exams.index')->with('success', __('Exam updated.'));
     }
 
-    public function applications(Exam $exam)
+    public function applications(Request $request, Exam $exam)
     {
+        $status = array_key_exists($request->query('status'), ExamApplication::STATUSES) ? $request->query('status') : null;
+
         return view('admin.pages.exams.applications', [
             'exam' => $exam->load('service'),
-            'applications' => $exam->applications()->with(['user.applicantProfile', 'media'])->latest('id')->paginate(50),
+            'applications' => $exam->applications()->with(['user.applicantProfile', 'media'])
+                ->when($status, fn ($query) => $query->where('status', $status))
+                ->latest('id')->paginate(50)->withQueryString(),
+            'statusCounts' => $exam->applications()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
+            'status' => $status,
         ]);
     }
 
@@ -70,8 +76,9 @@ class ExamController extends Controller
         abort_unless($application->exam_id === $exam->id, 404);
 
         return view('admin.pages.applications.show', [
-            'application' => $application->loadFullDetails(),
+            'application' => $application->loadFullDetails()->load('statusLogs.changedBy'),
             'backUrl' => route('exams.applications', $exam),
+            'admin' => true,
         ]);
     }
 

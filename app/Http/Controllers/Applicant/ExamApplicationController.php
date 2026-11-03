@@ -113,9 +113,16 @@ class ExamApplicationController extends Controller
         abort_unless($application->user_id === $this->user()->id, 404);
 
         return view('admin.pages.applications.show', [
-            'application' => $application->loadFullDetails(),
+            'application' => $application->loadFullDetails()->load('statusLogs'),
             'backUrl' => route('applicant.applications'),
         ]);
+    }
+
+    public function admitCard(ExamApplication $application)
+    {
+        abort_unless($application->user_id === $this->user()->id && $application->hasAdmitCard(), 404);
+
+        return view('admin.pages.applications.admit-card', ['application' => $application->loadFullDetails()]);
     }
 
     private function user(): User

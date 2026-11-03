@@ -65,11 +65,24 @@
                                             <span class="text-muted">{{ __('To be announced') }}</span>
                                         @endif
                                     </td>
-                                    <td><span class="badge bg-info-subtle text-info">{{ __(ucfirst($application->status)) }}</span></td>
+                                    <td>
+                                        @include('admin.pages.applications.partials.status')
+                                        @if ($application->roll_number)
+                                            <div class="small mt-1">{{ __('Roll no.') }} <strong>{{ $application->rollNumberLabel() }}</strong></div>
+                                        @endif
+                                        @if ($application->status === \App\Models\ExamApplication::REJECTED && $application->remarks)
+                                            <div class="small text-danger mt-1" style="max-width: 240px;">{{ $application->remarks }}</div>
+                                        @endif
+                                    </td>
                                     <td class="text-end">
                                         <a href="{{ route('applicant.applications.show', $application) }}" class="btn btn-sm btn-primary text-nowrap" style="background-color: #003893; border-color: #003893;">
                                             <i class="bi bi-eye"></i> {{ __('View application') }}
                                         </a>
+                                        @if ($application->hasAdmitCard())
+                                            <a href="{{ route('applicant.applications.admit-card', $application) }}" class="btn btn-sm btn-success text-nowrap mt-1" target="_blank">
+                                                <i class="bi bi-person-badge"></i> {{ __('Admit card') }}
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
