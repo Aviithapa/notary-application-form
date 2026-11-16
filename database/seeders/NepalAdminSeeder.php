@@ -17,12 +17,12 @@ class NepalAdminSeeder extends Seeder
     public function run(): void
     {
         $enData = json_decode(
-            File::get(storage_path('app/data/provinces_en.json')),
+            File::get(database_path('data/provinces_en.json')),
             true
         );
 
         $npData = json_decode(
-            File::get(storage_path('app/data/provinces_np.json')),
+            File::get(database_path('data/provinces_np.json')),
             true
         );
 

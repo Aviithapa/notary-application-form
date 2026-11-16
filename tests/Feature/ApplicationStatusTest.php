@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ApplicationStatusTest extends TestCase
@@ -177,15 +178,16 @@ class ApplicationStatusTest extends TestCase
         Service::create(['name' => 'Service without exams', 'name_np' => 'x', 'purpose' => 'other', 'icon' => 'bi-briefcase']);
 
         $this->actingAs($this->admin);
-        $sidebar = $this->get(route('dashboard'))->assertOk();
+        // Read the badges on a page whose content does not link to these lists itself
+        $sidebar = $this->get(route('change.password'))->assertOk();
         $licenceUrl = route('applications.index', ['service' => $this->exam->service_id]);
         $renewalUrl = route('applications.index', ['service' => $renewal->id]);
         $sidebar->assertSee($licenceUrl, false)->assertSee($renewalUrl, false)->assertDontSee('Service without exams');
-        // Badges: licence 2 pending, renewal 1, all services 3
+        // Badges: licence 2 pending, renewal 1, all services = every pending application
         $html = $sidebar->getContent();
         $this->assertMatchesRegularExpression('#' . preg_quote(e($licenceUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>2<#s', $html);
         $this->assertMatchesRegularExpression('#' . preg_quote(e($renewalUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>1<#s', $html);
-        $this->assertMatchesRegularExpression('#' . preg_quote(e(route('applications.index')), '#') . '"[^>]*>.*?rounded-pill[^>]*>3<#s', $html);
+        $this->assertMatchesRegularExpression('#' . preg_quote(e(route('applications.index')), '#') . '"[^>]*>.*?rounded-pill[^>]*>' . ExamApplication::where('status', ExamApplication::PENDING)->count() . '<#s', $html);
 
         // Service page lists only that service's applications, with status tabs
         $this->get($licenceUrl)->assertOk()
@@ -201,7 +203,7 @@ class ApplicationStatusTest extends TestCase
             'status' => ExamApplication::APPROVED, 'applications' => [$licenceA->id],
         ])->assertRedirect($licenceUrl);
         $this->assertSame(ExamApplication::APPROVED, $licenceA->fresh()->status);
-        $this->assertMatchesRegularExpression('#' . preg_quote(e($licenceUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>1<#s', $this->get(route('dashboard'))->getContent());
+        $this->assertMatchesRegularExpression('#' . preg_quote(e($licenceUrl), '#') . '"[^>]*>.*?rounded-pill[^>]*>1<#s', $this->get(route('change.password'))->getContent());
     }
 
     public function test_service_without_exam_only_uses_pending_approved_rejected(): void
@@ -235,6 +237,23 @@ class ApplicationStatusTest extends TestCase
         $other->changeStatus(ExamApplication::APPROVED, null, $this->admin);
         $this->patch(route('applications.bulk-status'), ['status' => ExamApplication::PASSED, 'applications' => [$other->id]])->assertSessionHas('error');
         $this->assertSame(ExamApplication::APPROVED, $other->fresh()->status);
+    }
+
+    public function test_admin_dashboard_summarises_applications(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-10 12:00', config('app.business_timezone')));
+        $pending = $this->application();
+        $approved = $this->application();
+        $approved->changeStatus(ExamApplication::APPROVED, null, $this->admin);
+
+        $this->actingAs($this->admin)->get(route('dashboard'))->assertOk()
+            ->assertSee(__('Needs attention'))
+            ->assertSee(e(route('applications.index', ['service' => $this->exam->service_id, 'status' => ExamApplication::PENDING])), false)
+            ->assertSee(__('Open for applications'))->assertSee('Notary exam')        // open call
+            ->assertSee(__('Upcoming exams'))->assertSee('2083-09')                    // exam date (day and month shown apart)
+            ->assertSee($pending->application_number)->assertSee($approved->application_number) // recent
+            ->assertSee(__('Applications by status'));
+        Carbon::setTestNow();
     }
 
     public function test_applicants_cannot_change_status(): void

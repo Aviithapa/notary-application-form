@@ -95,13 +95,14 @@
 
                 @foreach ($items as $item)
                     <li class="side-nav-item {{ $item['active'] ? 'menuitem-active' : '' }}">
-                        <a href="{{ $item['url'] }}" class="side-nav-link {{ $item['active'] ? 'active' : '' }}">
+                        <a href="{{ $item['url'] }}" title="{{ $item['label'] }}"
+                            class="side-nav-link {{ $item['active'] ? 'active' : '' }} {{ array_key_exists('badge', $item) ? 'side-nav-link-badged' : '' }}">
                             <i class="bi {{ $item['icon'] }}"></i>
+                            <span class="side-nav-label"> {{ $item['label'] }} </span>
                             @if (!empty($item['badge']))
-                                <span class="badge bg-warning text-dark rounded-pill float-end"
+                                <span class="badge bg-warning text-dark rounded-pill"
                                     title="{{ __('Pending') }}">{{ $item['badge'] }}</span>
                             @endif
-                            <span> {{ $item['label'] }} </span>
                         </a>
                     </li>
                 @endforeach
@@ -112,3 +113,13 @@
     </div>
 </div>
 <!-- ========== Left Sidebar End ========== -->
+
+{{-- Inline, not @push: the layout prints its styles stack before it includes the sidebar --}}
+<style>
+    /* Long service names are cut with … so the pending badge always has room. The theme pins
+       sidebar badges absolutely to the right edge, so put the badge back in the flow here
+       (full-width sidebar only; the condensed icon sidebar keeps the theme's layout). */
+    html:not([data-sidenav-size=condensed]) .side-nav .side-nav-link-badged { display: flex; align-items: center; }
+    html:not([data-sidenav-size=condensed]) .side-nav .side-nav-link-badged .side-nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    html:not([data-sidenav-size=condensed]) .side-nav .side-nav-link-badged .badge { position: static; flex: none; margin: 0 0 0 .35rem; }
+</style>
